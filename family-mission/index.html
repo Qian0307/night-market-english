@@ -132,6 +132,19 @@ details.chk p{margin-top:4px;font-family:var(--font-display);font-weight:600;col
 .mgc.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 18%,var(--surface))}
 .mgsent{display:flex;flex-wrap:wrap;gap:8px}
 .mgsent span{background:var(--tint);border-radius:8px;padding:4px 12px;font-size:1.0625rem}
+.boss{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+@media (max-width:520px){.boss{grid-template-columns:1fr;justify-items:center}.boss>div:last-child{width:100%}}
+.bossimg svg,#bBoss svg{width:120px;height:124px;display:block}
+#bBoss.hit svg{animation:bshake .45s}
+@keyframes bshake{20%{transform:translateX(-9px) rotate(-5deg)}40%{transform:translateX(9px) rotate(5deg)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+.hpbar{height:16px;border-radius:8px;background:var(--tint);overflow:hidden;border:1px solid var(--line)}
+.hpbar i{display:block;height:100%;background:var(--accent);transition:width .4s}
+.hearts{display:flex;gap:6px}
+.hearts svg{width:28px;height:28px;display:block}
+.hearts .off{opacity:.18}
+.slotline{min-height:68px;border:2px dashed var(--line);border-radius:10px;padding:8px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin-bottom:12px}
+.wd{border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 16px;font-family:var(--font-display);font-size:1.375rem;font-weight:600;min-height:48px}
+.wd:hover{background:var(--tint)}
 .pickwords{display:flex;flex-wrap:wrap;gap:8px}
 .pw{border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 16px;font-weight:500;font-size:1.0625rem;min-height:44px}
 .pw:hover{background:var(--tint)}
@@ -226,6 +239,7 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:v
           <tr><td>20–32</td><td>夜市英文</td><td>玩夜市英文，接著由他自己選字做拼字闖關</td></tr>
           <tr><td>32–45</td><td>介紹角色</td><td>選一個角色，用 He/She is、has 說出 5 句</td></tr>
           <tr><td>45–55</td><td>寫下來</td><td>把剛才說的寫成句子，檢查大寫和句號</td></tr>
+          <tr><td>加碼</td><td>Boss 測驗</td><td>有時間就玩，用打魔王的方式檢查今天學的內容</td></tr>
           <tr><td>55–60</td><td>回顧</td><td>標記每個項目的掌握程度，產生上課紀錄</td></tr>
         </tbody>
       </table>
@@ -472,6 +486,42 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:v
         <div class="preview" id="wPrev" aria-live="polite"></div>
         <div class="tally"><span>完成句數 <b id="wN">0</b> / 5</span></div>
         <div class="say" style="margin:0"><b>檢查重點</b><span>每句開頭大寫、結尾有句號、He / She 後面是 is、has 的拼寫。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- boss -->
+  <section class="block" id="b-boss">
+    <div class="block-head"><h2>Boss 測驗</h2><span class="when">加碼 · 約 5 分鐘</span></div>
+    <p class="muted">用打魔王的方式檢查今天學的內容。他有 3 顆愛心，答對就打傷魔王，答錯扣一顆愛心，那題之後會再出現一次。題目不給提示。</p>
+    <div class="panel">
+      <div id="bStart" style="display:grid;gap:12px;justify-items:center;text-align:center">
+        <div class="bossimg" id="bBoss0"></div>
+        <div class="big" style="font-size:clamp(1.75rem,6vw,2.5rem)">Lantern King</div>
+        <p class="muted">夜市大魔王出現了！把題目答對，就能打倒他。</p>
+        <div class="words" style="justify-content:center"><span>be 動詞</span><span>家人單字</span><span>數字</span><span>缺字母</span><span>排句子</span></div>
+        <button class="btn primary" id="bGo" type="button">開始挑戰</button>
+      </div>
+      <div id="bGame" hidden style="display:grid;gap:14px">
+        <div class="boss">
+          <div id="bBoss"></div>
+          <div style="display:grid;gap:8px;min-width:0">
+            <div class="row" style="justify-content:space-between"><span class="chip" id="bTalk">Answer my questions!</span><div class="hearts" id="bHearts" role="img" aria-label="愛心"></div></div>
+            <div class="hpbar" aria-hidden="true"><i id="bHP" style="width:100%"></i></div>
+            <div class="tally"><span>魔王還剩 <b id="bLeft">10</b> 題</span><span>答錯 <b id="bWrong">0</b></span></div>
+          </div>
+        </div>
+        <div class="stage" id="bStage" aria-live="polite"></div>
+        <div id="bOpts"></div>
+        <div class="fb" id="bFb" aria-live="polite"></div>
+        <div class="row"><button class="btn primary" id="bNext" type="button" hidden>下一題</button></div>
+      </div>
+      <div id="bEnd" hidden style="display:grid;gap:12px;justify-items:center;text-align:center">
+        <div class="bossimg" id="bEndBoss"></div>
+        <div class="big" id="bEndTitle" style="font-size:clamp(1.75rem,6vw,2.5rem)"></div>
+        <p id="bEndSub"></p>
+        <p class="muted" id="bEndMiss"></p>
+        <button class="btn primary" id="bAgain" type="button">再挑戰一次</button>
       </div>
     </div>
   </section>
@@ -804,6 +854,115 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:v
   $('#spNo').addEventListener('click',function(){if(si<sDeck.length){sM++;sMiss.push(sDeck[si][0]);si++;sRender()}});
   pkPaint();
 
+  /* ---------- boss quiz ---------- */
+  var BOSS='<svg viewBox="0 0 120 124" aria-hidden="true"><rect x="54" y="2" width="12" height="14" rx="3" fill="var(--gold)"/><ellipse cx="60" cy="62" rx="46" ry="44" fill="var(--accent)"/><path d="M60 20 C40 40 40 86 60 106 M60 20 C80 40 80 86 60 106" stroke="rgba(0,0,0,.2)" stroke-width="3" fill="none"/><rect x="48" y="102" width="24" height="8" rx="2" fill="var(--gold)"/><path d="M52 110 v10 M60 110 v12 M68 110 v10" stroke="var(--gold)" stroke-width="3" stroke-linecap="round"/><circle cx="44" cy="56" r="9" fill="#fff"/><circle cx="76" cy="56" r="9" fill="#fff"/><circle cx="46" cy="58" r="4" fill="#1A2038"/><circle cx="74" cy="58" r="4" fill="#1A2038"/><path d="M33 44 L53 51 M87 44 L67 51" stroke="#1A2038" stroke-width="4" stroke-linecap="round"/><path d="M40 78 L47 86 L54 78 L60 86 L66 78 L73 86 L80 78 Q60 96 40 78Z" fill="#1A2038"/></svg>';
+  var HEART='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21 C4 14 2 9 5 6 C8 3 11 5 12 7 C13 5 16 3 19 6 C22 9 20 14 12 21Z" fill="var(--accent)"/></svg>';
+  $('#bBoss0').innerHTML=BOSS;$('#bBoss').innerHTML=BOSS;
+  var bResult=null,bQueue=[],bTotal=10,bHearts=3,bWrong=0,bMissList=[],bLock=false,bTimer=null;
+  var BEQ=[['I ___ a student.','am','I am a student.'],['You ___ my teacher.','are','You are my teacher.'],['He ___ my brother.','is','He is my brother.'],['She ___ my sister.','is','She is my sister.'],['They ___ my friends.','are','They are my friends.'],['She ___ my grandma.','is','She is my grandma.'],['He ___ my grandpa.','is','He is my grandpa.'],['They ___ my parents.','are','They are my parents.']];
+  var NUMQ=[[11,'eleven',['twelve','seven','ten']],[12,'twelve',['eleven','twenty','two']],[13,'thirteen',['thirty','fifteen','twelve']],[14,'fourteen',['forty','sixteen','thirteen']],[15,'fifteen',['fifty','fourteen','eleven']],[16,'sixteen',['seventeen','fifteen','six']],[17,'seventeen',['sixteen','seven','eighteen']],[18,'eighteen',['eight','nineteen','seventeen']],[19,'nineteen',['nine','eighteen','twenty']],[20,'twenty',['twelve','thirty','two']],[30,'thirty',['thirteen','forty','twenty']],[40,'forty',['fourteen','thirty','fifty']],[50,'fifty',['fifteen','forty','fourteen']]];
+  var MISSQ=[['m_ther','媽媽','o',['a','o','e']],['gr_ndma','奶奶','a',['a','e','o']],['sis_er','姊姊','t',['t','d','s']],['bro_her','哥哥','t',['t','d','h']],['fam_ly','家人','i',['i','e','a']],['fr_end','朋友','i',['i','e','a']],['thir_een','13','t',['t','d','s']],['twen_y','20','t',['t','d','n']],['eigh_een','18','t',['t','h','d']],['par_nts','父母','e',['e','a','o']]];
+  var ORDQ=[['她是我的媽媽。',['She','is','my','mother.']],['他是我的爸爸。',['He','is','my','father.']],['他們是我的爸媽。',['They','are','my','parents.']],['我是學生。',['I','am','a','student.']],['你是我的朋友。',['You','are','my','friend.']]];
+  var CHEER=['Great!','Nice!','Yes!','Boom!','Awesome!'];
+  function bMake(){
+    var qs=[];
+    shuffle(BEQ).slice(0,3).forEach(function(r){qs.push({t:'opt',keep:true,tag:'be 動詞',prompt:r[0],sub:'選出正確的 be 動詞',opts:['am','is','are'],a:r[1],label:r[2]})});
+    shuffle(FAM).slice(0,2).forEach(function(w){
+      var o=shuffle(FAM.filter(function(x){return x[0]!==w[0]})).slice(0,3).map(function(x){return x[0]});o.push(w[0]);
+      qs.push({t:'opt',tag:'家人單字',prompt:w[1],sub:'這個英文怎麼說？',opts:o,a:w[0],label:w[1]+' = '+w[0]});
+    });
+    shuffle(NUMQ).slice(0,2).forEach(function(r){qs.push({t:'opt',tag:'數字',prompt:String(r[0]),sub:'英文怎麼拼？',opts:r[2].concat([r[1]]),a:r[1],label:r[0]+' = '+r[1]})});
+    var m=shuffle(MISSQ)[0];
+    qs.push({t:'opt',tag:'缺字母',prompt:m[0],sub:m[1]+'，缺哪個字母？',opts:m[3],a:m[2],label:m[0].replace('_',m[2])});
+    shuffle(ORDQ).slice(0,2).forEach(function(r){qs.push({t:'order',tag:'排句子',prompt:r[0],sub:'把字排成正確的英文句子',words:r[1],a:r[1].join(' '),label:r[1].join(' ')})});
+    return shuffle(qs);
+  }
+  function bPaint(){
+    var h='';for(var i=0;i<3;i++){h+='<span class="'+(i<bHearts?'':'off')+'">'+HEART+'</span>'}
+    $('#bHearts').innerHTML=h;$('#bHearts').setAttribute('aria-label','剩 '+Math.max(bHearts,0)+' 顆愛心');
+    $('#bHP').style.width=Math.round(bQueue.length/bTotal*100)+'%';
+    $('#bLeft').textContent=bQueue.length;$('#bWrong').textContent=bWrong;
+  }
+  function bHit(){var r=$('#bBoss');r.classList.remove('hit');void r.offsetWidth;r.classList.add('hit')}
+  function bShow(){
+    clearTimeout(bTimer);bLock=false;
+    var q=bQueue[0];
+    $('#bStage').innerHTML='<span class="chip">'+q.tag+'</span><div class="big" style="font-size:clamp(1.75rem,7vw,2.75rem)">'+q.prompt+'</div><div class="muted">'+q.sub+'</div>';
+    $('#bFb').textContent='';$('#bFb').className='fb';$('#bNext').hidden=true;$('#bTalk').textContent='Answer my questions!';
+    var box=$('#bOpts');box.innerHTML='';
+    if(q.t==='opt'){
+      box.className='row';box.style.justifyContent='center';
+      (q.keep?q.opts:shuffle(q.opts)).forEach(function(o){
+        var b=document.createElement('button');b.type='button';b.className='opt';b.textContent=o;b.dataset.v=o;
+        b.addEventListener('click',function(){bAns(o===q.a,q,b)});box.appendChild(b);
+      });
+    }else{
+      box.className='';box.style.justifyContent='';
+      var built=[],pool=q.words.map(function(w,i){return {w:w,id:i}}),tries=0;
+      do{pool=shuffle(pool);tries++}while(pool.map(function(x){return x.w}).join(' ')===q.a&&tries<10);
+      var slot=document.createElement('div');slot.className='slotline';
+      var pl=document.createElement('div');pl.className='row';pl.style.justifyContent='center';
+      box.appendChild(slot);box.appendChild(pl);
+      var draw=function(){
+        slot.innerHTML='';pl.innerHTML='';
+        if(!built.length){var hint=document.createElement('span');hint.className='muted';hint.textContent='點下面的字，照順序排在這裡';slot.appendChild(hint)}
+        built.forEach(function(x,i){
+          var b=document.createElement('button');b.type='button';b.className='wd';b.textContent=x.w;
+          b.addEventListener('click',function(){if(bLock)return;pool.push(built.splice(i,1)[0]);draw()});slot.appendChild(b);
+        });
+        pool.forEach(function(x,i){
+          var b=document.createElement('button');b.type='button';b.className='wd';b.textContent=x.w;
+          b.addEventListener('click',function(){
+            if(bLock)return;built.push(pool.splice(i,1)[0]);draw();
+            if(!pool.length){bAns(built.map(function(y){return y.w}).join(' ')===q.a,q,null)}
+          });
+          pl.appendChild(b);
+        });
+      };
+      draw();
+    }
+    bPaint();
+  }
+  function bAns(ok,q,btn){
+    if(bLock)return;bLock=true;
+    if(btn)btn.classList.add(ok?'right':'wrong');
+    if(!ok&&q.t==='opt'){$$('#bOpts .opt').forEach(function(x){if(x.dataset.v===q.a)x.classList.add('right')})}
+    if(ok){
+      bQueue.shift();
+      $('#bFb').className='fb ok';$('#bFb').textContent=CHEER[Math.floor(Math.random()*CHEER.length)];
+      $('#bTalk').textContent='Ouch!';bHit();bPaint();
+      bTimer=setTimeout(bNextQ,900);
+    }else{
+      bWrong++;bHearts--;
+      if(bMissList.indexOf(q.label)<0)bMissList.push(q.label);
+      var cur=bQueue.shift();
+      if(!cur.retried){cur.retried=true;bQueue.push(cur)}
+      $('#bFb').className='fb no';$('#bFb').textContent='答案是：'+q.a;
+      $('#bTalk').textContent='Ha ha!';bPaint();
+      if(bHearts<=0){bTimer=setTimeout(function(){bEnd(false)},1800)}
+      else{$('#bNext').hidden=false}
+    }
+  }
+  function bNextQ(){if(!bQueue.length){bEnd(true)}else{bShow()}}
+  function bEnd(win){
+    clearTimeout(bTimer);
+    $('#bGame').hidden=true;$('#bEnd').hidden=false;
+    bResult={win:win,wrong:bWrong,hearts:Math.max(bHearts,0),miss:bMissList.slice()};
+    $('#bEndTitle').textContent=win?'魔王被打倒了！':'這次魔王贏了';
+    $('#bEndSub').textContent=win?'剩下 '+bResult.hearts+' 顆愛心，答錯 '+bWrong+' 次。':'愛心用完了，再挑戰一次吧。';
+    $('#bEndMiss').textContent=bMissList.length?'要再練習：'+bMissList.join('、'):'全部都答對，太厲害了！';
+    $('#bEndBoss').innerHTML=BOSS;
+  }
+  function bStartGame(){
+    clearTimeout(bTimer);
+    bQueue=bMake();bTotal=bQueue.length;bHearts=3;bWrong=0;bMissList=[];bResult=null;
+    $('#bStart').hidden=true;$('#bEnd').hidden=true;$('#bGame').hidden=false;
+    bShow();
+  }
+  $('#bGo').addEventListener('click',bStartGame);
+  $('#bAgain').addEventListener('click',bStartGame);
+  $('#bNext').addEventListener('click',function(){bNextQ()});
+
   /* ---------- 5. writing ---------- */
   var W=['w1','w2','w3','w4','w5'];
   function flagFor(t){
@@ -858,6 +1017,7 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:v
     if(g.hint.length)lines.push('需要提示：'+g.hint.join('、'));
     if(g.no.length)lines.push('沒練到：'+g.no.join('、'));
     if(sMiss.length)lines.push('拼字待加強：'+sMiss.join('、'));
+    if(bResult)lines.push('Boss 測驗：'+(bResult.win?'打倒魔王':'未通關')+'，答錯 '+bResult.wrong+' 次，剩 '+bResult.hearts+' 顆愛心'+(bResult.miss.length?'；答錯題目：'+bResult.miss.join('、'):''));
     var n=$('#notes').value.trim();if(n)lines.push('觀察：'+n);
     var w=W.map(function(id){return $('#'+id).value.trim()}).filter(Boolean);
     if(w.length)lines.push('短文：'+w.join(' '));
