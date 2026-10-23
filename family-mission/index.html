@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}</style>
+<title>家族任務英文課</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: sticky lesson clock on top, then six lesson blocks in time order. Night-market palette: ink navy, lantern red, teal, gold. */
+:root{
+  --bg:#F3F5F9; --surface:#FFFFFF; --fg:#1A2038; --muted:#5B6485; --line:#D8DDEA;
+  --accent:#D2412C; --accent-fg:#FFFFFF; --teal:#17857D; --gold:#F0B429; --tint:#EAEEF7;
+  --good:#1E8A4C; --warn:#9A6A0E; --bad:#C0352B;
+  --font-display:"Fredoka","Noto Sans TC",system-ui,sans-serif;
+  --font-body:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11152A; --surface:#1B2040; --fg:#EEF0FA; --muted:#A3ABCB; --line:#2E3560;
+    --accent:#FF6A4F; --accent-fg:#1A0A07; --teal:#4CC9BE; --gold:#F6C453; --tint:#232950;
+    --good:#5CD08A; --warn:#F2B84B; --bad:#FF8A7E; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11152A; --surface:#1B2040; --fg:#EEF0FA; --muted:#A3ABCB; --line:#2E3560;
+  --accent:#FF6A4F; --accent-fg:#1A0A07; --teal:#4CC9BE; --gold:#F6C453; --tint:#232950;
+  --good:#5CD08A; --warn:#F2B84B; --bad:#FF8A7E; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+.wrap{max-width:980px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-display);line-height:1.25;text-wrap:balance;margin:0}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.en{font-family:var(--font-display)}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+
+/* clock */
+.clock{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);
+  margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px))}
+.clock-in{max-width:980px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.clock-now{display:flex;align-items:baseline;gap:10px;min-width:0;flex:1 1 220px}
+.clock-name{font-weight:700;min-width:0}
+.clock-time{font-family:var(--font-display);font-size:1.75rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--accent)}
+.clock-time.over{color:var(--bad)}
+.clock-btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 14px;font-weight:500;min-height:38px}
+.btn:hover{background:var(--tint)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:700}
+.btn.primary:hover{filter:brightness(.95)}
+.btn.good{border-color:var(--good);color:var(--good)}
+.btn.warn{border-color:var(--warn);color:var(--warn)}
+.btn.bad{border-color:var(--bad);color:var(--bad)}
+.btn[disabled]{opacity:.45;cursor:default}
+.bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--tint);width:100%}
+.bar i{display:block;height:100%;background:var(--teal);opacity:.35;border-right:2px solid var(--surface)}
+.bar i.done{opacity:1}
+.bar i.cur{opacity:1;background:var(--accent)}
+
+/* hero */
+.hero{padding:40px 0 24px;display:grid;gap:14px}
+.eyebrow{font-weight:700;letter-spacing:.12em;font-size:.8125rem;color:var(--teal)}
+.hero h1{font-size:clamp(2rem,6vw,3.25rem)}
+.hero h1 span{color:var(--accent)}
+.hero .lead{max-width:60ch;color:var(--muted)}
+.goal{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin-top:8px}
+.goal div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.goal b{display:block;font-size:.8125rem;letter-spacing:.08em;color:var(--muted);margin-bottom:2px}
+
+/* plan table */
+.plan{margin:8px 0 8px;overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.plan table{border-collapse:collapse;width:100%;min-width:520px}
+.plan th,.plan td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.plan th{font-size:.8125rem;letter-spacing:.08em;color:var(--muted);background:var(--tint)}
+.plan tr:last-child td{border-bottom:0}
+.plan td:first-child{font-family:var(--font-display);font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* blocks */
+.block{padding:44px 0 8px;border-top:1px solid var(--line);margin-top:36px;scroll-margin-top:96px}
+.block-head{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;margin-bottom:6px}
+.block-head h2{font-size:clamp(1.5rem,4vw,2rem)}
+.when{font-family:var(--font-display);font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+.say{background:var(--tint);border-radius:10px;padding:12px 16px;margin:14px 0;display:grid;gap:4px}
+.say b{font-size:.8125rem;letter-spacing:.08em;color:var(--teal)}
+.say .en{font-size:1.125rem}
+.grid2{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:12px;min-width:0}
+.panel h3{font-size:1.125rem}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 14px;font-weight:500}
+.tab[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.stage{background:var(--tint);border-radius:10px;min-height:190px;padding:16px;display:grid;place-items:center;text-align:center;gap:8px;align-content:center}
+.chip{display:inline-block;font-size:.75rem;font-weight:700;letter-spacing:.08em;border-radius:999px;padding:2px 10px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.big{font-family:var(--font-display);font-size:clamp(2.25rem,9vw,3.5rem);font-weight:600;line-height:1.1;overflow-wrap:anywhere}
+.ans{font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:var(--teal);min-height:2.2rem;overflow-wrap:anywhere}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tally{display:flex;gap:14px;flex-wrap:wrap;font-variant-numeric:tabular-nums;font-size:.9375rem}
+.tally b{font-family:var(--font-display);font-size:1.125rem}
+.swatch{width:96px;height:96px;border-radius:50%;border:2px solid var(--line)}
+.shape{width:104px;height:104px}
+.tile{display:inline-grid;place-items:center;min-width:44px;height:52px;padding:0 8px;border-radius:8px;background:var(--surface);border:2px solid var(--line);font-family:var(--font-display);font-size:1.75rem;font-weight:600;text-transform:uppercase}
+.tiles{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.opt{border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 22px;font-family:var(--font-display);font-size:1.375rem;font-weight:600}
+.opt.right{border-color:var(--good);background:color-mix(in srgb,var(--good) 18%,var(--surface))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 18%,var(--surface))}
+.fb{min-height:1.6rem;font-weight:700}
+.fb.ok{color:var(--good)} .fb.no{color:var(--bad)}
+.steps{display:grid;gap:12px;margin:0;padding:0;list-style:none}
+.steps>li{display:grid;gap:8px;background:var(--bg);border-radius:10px;padding:14px 16px;min-width:0}
+.steps>li>b{color:var(--teal)}
+details.chk{background:var(--tint);border-radius:8px;padding:8px 12px}
+details.chk summary{cursor:pointer;font-weight:500}
+details.chk p{margin-top:4px;font-family:var(--font-display);font-weight:600;color:var(--teal)}
+.tog[aria-pressed="true"]{background:var(--good);border-color:var(--good);color:#fff}
+.pickwords{display:flex;flex-wrap:wrap;gap:8px}
+.pw{border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 16px;font-weight:500;font-size:1.0625rem;min-height:44px}
+.pw:hover{background:var(--tint)}
+.pw[aria-pressed="true"]{border-color:var(--teal);background:color-mix(in srgb,var(--teal) 20%,var(--surface));font-weight:700}
+.progress{height:6px;background:var(--tint);border-radius:3px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--teal);width:0;transition:width .25s}
+
+/* lists */
+.cols{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
+.col{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.col h3{font-size:1rem;margin-bottom:6px;color:var(--teal)}
+.col ul{margin:0;padding-left:1.1em}
+.col li{margin:2px 0}
+.words{display:flex;flex-wrap:wrap;gap:6px}
+.words span{font-family:var(--font-display);background:var(--tint);border-radius:6px;padding:1px 10px;font-weight:500}
+.ladder{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.ladder li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.ladder .lv{font-family:var(--font-display);font-weight:700;color:var(--accent);min-width:3.2rem}
+.ladder .en{font-size:1.0625rem}
+.link-card{display:grid;gap:6px;background:var(--surface);border:2px solid var(--teal);border-radius:12px;padding:18px;text-decoration:none;color:inherit}
+.link-card:hover{background:var(--tint)}
+.link-card .t{font-family:var(--font-display);font-size:1.375rem;font-weight:600;color:var(--teal)}
+.mission{counter-reset:m;display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.mission li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.mission b{display:block}
+
+/* writing */
+.line-in{display:grid;gap:4px}
+.line-in label{font-size:.875rem;color:var(--muted);font-weight:500}
+.line-in input,.line-in select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px;width:100%;min-width:0}
+.line-in input{font-family:var(--font-display);font-size:1.125rem}
+.flag{font-size:.8125rem;min-height:1.2rem;color:var(--warn);font-weight:500}
+.preview{background:var(--tint);border-radius:10px;padding:16px;font-family:var(--font-display);font-size:1.25rem;line-height:1.8;min-height:120px;overflow-wrap:anywhere}
+
+/* review */
+.rv{display:grid;gap:10px}
+.rv-item{display:grid;gap:8px;grid-template-columns:minmax(0,1fr) auto;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+@media (max-width:620px){.rv-item{grid-template-columns:1fr}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;border-right:1px solid var(--line);background:var(--surface);padding:6px 12px;font-size:.9375rem}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{color:#fff}
+.seg button[data-v="can"][aria-pressed="true"]{background:var(--good)}
+.seg button[data-v="hint"][aria-pressed="true"]{background:var(--warn)}
+.seg button[data-v="no"][aria-pressed="true"]{background:var(--muted)}
+.record{white-space:pre-wrap;background:var(--tint);border-radius:10px;padding:14px;font-size:.9375rem;min-height:80px;overflow-wrap:anywhere}
+.flex{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.flex div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.flex b{display:block;color:var(--accent);margin-bottom:2px}
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.875rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="clock" id="clock">
+  <div class="clock-in">
+    <div class="clock-now">
+      <span class="clock-name" id="clockName">尚未開始</span>
+      <span class="clock-time" id="clockTime">60:00</span>
+    </div>
+    <div class="clock-btns">
+      <button class="btn primary" id="clkStart" type="button">開始上課</button>
+      <button class="btn" id="clkNext" type="button">下一段</button>
+      <button class="btn" id="clkReset" type="button">重設</button>
+    </div>
+    <div class="bar" id="clockBar" aria-hidden="true"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">10/23 週五 · 英文 · 60 分鐘</p>
+    <h1>Family Mission<br><span>家族任務</span></h1>
+    <p class="lead">先教 be 動詞，再練習說完整句，最後寫成短文。整堂課用遊戲帶他把 be 動詞從「認得」變成「會用」，順便補強家人單字與大數字的拼寫。</p>
+    <div class="goal">
+      <div><b>主要目標</b>不看提示，自己說出 I am / You are / He is / She is / They are 的完整句。</div>
+      <div><b>補強</b>家人單字拼寫（mother、sister、grandma…）與 eleven 到 twenty 的拼寫。</div>
+      <div><b>成果</b>一段 5 句的角色介紹，口頭說完再寫下來。</div>
+    </div>
+  </header>
+
+  <section aria-labelledby="planTitle">
+    <h2 id="planTitle" class="small muted" style="letter-spacing:.08em;margin:8px 0">今日流程</h2>
+    <div class="plan">
+      <table>
+        <thead><tr><th>時間</th><th>環節</th><th>做什麼</th></tr></thead>
+        <tbody>
+          <tr><td>0–5</td><td>開場任務</td><td>顏色、形狀、11–19 快問快答，用熟悉的內容暖身</td></tr>
+          <tr><td>5–20</td><td>教學＋身分偵探</td><td>前 5 分鐘教 be 動詞，後 10 分鐘看卡片說完整句，練習時不給提示</td></tr>
+          <tr><td>20–32</td><td>夜市英文</td><td>玩夜市英文，接著由他自己選字做拼字闖關</td></tr>
+          <tr><td>32–45</td><td>介紹角色</td><td>選一個角色，用 He/She is、has 說出 5 句</td></tr>
+          <tr><td>45–55</td><td>寫下來</td><td>把剛才說的寫成句子，檢查大寫和句號</td></tr>
+          <tr><td>55–60</td><td>回顧</td><td>標記每個項目的掌握程度，產生上課紀錄</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 1 -->
+  <section class="block" id="b-warm" data-block="0">
+    <div class="block-head"><h2>開場任務</h2><span class="when">0–5 分鐘</span></div>
+    <p class="muted">這些他已經很熟，目的是讓他一開始就答對，先進入狀態。</p>
+    <div class="say"><b>老師說</b><span class="en">Ready? Let's play a quick game. Say it in English!</span></div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>快問快答卡</h3>
+        <div class="tabs" id="warmTabs" role="group" aria-label="卡片類型">
+          <button class="tab" type="button" data-k="all" aria-pressed="true">全部</button>
+          <button class="tab" type="button" data-k="color" aria-pressed="false">顏色</button>
+          <button class="tab" type="button" data-k="shape" aria-pressed="false">形狀</button>
+          <button class="tab" type="button" data-k="num" aria-pressed="false">11–19</button>
+        </div>
+        <div class="stage" id="warmStage" aria-live="polite"></div>
+        <div class="ans" id="warmAns"></div>
+        <div class="row">
+          <button class="btn" id="warmShow" type="button">看答案</button>
+          <button class="btn good" id="warmOk" type="button">答對</button>
+          <button class="btn bad" id="warmNo" type="button">沒答出來</button>
+        </div>
+        <div class="tally"><span>答對 <b id="warmC">0</b></span><span>沒答出 <b id="warmM">0</b></span><span class="muted" id="warmLeft"></span></div>
+      </div>
+      <div class="panel">
+        <h3>30 秒挑戰</h3>
+        <p class="muted small">按下開始後，看他 30 秒內能答對幾張。時間到會顯示結果。</p>
+        <div class="stage"><div class="big" id="chTime">30</div><div id="chMsg" class="muted">準備好就開始</div></div>
+        <div class="row"><button class="btn primary" id="chGo" type="button">開始 30 秒</button></div>
+        <div class="say" style="margin:0"><b>小提醒</b><span>如果他很快全答對，下次可改成 20 秒，或加入形狀加顏色的組合，例如 a red circle。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="block" id="b-detective" data-block="1">
+    <div class="block-head"><h2>教學＋身分偵探</h2><span class="when">5–20 分鐘</span></div>
+    <p class="muted">先花約 5 分鐘把 be 動詞教清楚，再進入約 10 分鐘的身分卡練習。練習時不給提示，說錯就看答案跟著唸一遍。</p>
+
+    <div class="panel" id="teach">
+      <h3>先教：be 動詞（約 5 分鐘）</h3>
+      <p class="muted small">三步驟：先講、再配對、最後示範跟讀。這段由你帶著說，他先聽、先看、先跟。</p>
+      <ol class="steps">
+        <li>
+          <b>第 1 步 · 講概念（約 1 分鐘）</b>
+          <span>am、is、are 都是「是」的意思，合稱 be 動詞。要說「誰是誰」，句子裡就一定要有它。</span>
+          <span>例如中文說「她是我的媽媽」，英文就是 She <u>is</u> my mother，那個「是」就是 is。</span>
+          <span class="en" style="color:var(--teal)">Today we learn how to say who people are.</span>
+        </li>
+        <li>
+          <b>第 2 步 · 認識配對（約 2 分鐘）</b>
+          <span>主詞不同，be 動詞也不同。點下面的字，看它要配哪一個，並照著「搭配動作」指給他看。</span>
+          <div class="tabs" id="bePick" role="group" aria-label="選主詞">
+            <button class="tab" type="button" data-k="I" aria-pressed="true">I</button>
+            <button class="tab" type="button" data-k="You" aria-pressed="false">You</button>
+            <button class="tab" type="button" data-k="He" aria-pressed="false">He</button>
+            <button class="tab" type="button" data-k="She" aria-pressed="false">She</button>
+            <button class="tab" type="button" data-k="They" aria-pressed="false">They</button>
+          </div>
+          <div class="stage" id="beShow" aria-live="polite"></div>
+          <div class="say" style="margin:0"><b>口訣</b><span>I 配 am；He、She 配 is；You、They 配 are。</span></div>
+        </li>
+        <li>
+          <b>第 3 步 · 示範跟讀（約 2 分鐘）</b>
+          <span>每句三輪：你先說並做動作，接著一起說，最後換他自己說。他說對就按「他說對了」。</span>
+          <div class="plan" style="margin:0"><table>
+            <thead><tr><th>句子</th><th>搭配動作</th><th>結果</th></tr></thead>
+            <tbody id="tchRows"></tbody>
+          </table></div>
+        </li>
+      </ol>
+      <div class="col">
+        <h3>教完先確認他懂了</h3>
+        <div style="display:grid;gap:8px">
+          <details class="chk"><summary>指著媽媽說 She ___ my mother，要填 am、is 還是 are？</summary><p>is</p></details>
+          <details class="chk"><summary>說自己，I ___ a student，要填哪一個？</summary><p>am</p></details>
+          <details class="chk"><summary>指著爸爸和媽媽說 They ___ my parents，要填哪一個？</summary><p>are</p></details>
+        </div>
+        <p class="small muted" style="margin-top:8px">三題都能自己答出來，再進入下面的身分卡。答錯的那題回到第 2 步再指一次。</p>
+      </div>
+    </div>
+
+    <div class="say"><b>老師說</b><span class="en">You are a detective. Who is she? Who are they? Answer with a full sentence.</span></div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>身分卡（約 10 分鐘，不給提示）</h3>
+        <div class="progress"><i id="dtBar"></i></div>
+        <div class="stage" id="dtStage" aria-live="polite"></div>
+        <div class="ans" id="dtAns"></div>
+        <div class="row">
+          <button class="btn good" data-dt="can" type="button">自己說出</button>
+          <button class="btn bad" data-dt="no" type="button">說錯，看答案跟讀</button>
+          <button class="btn primary" id="dtNext" type="button" hidden>下一張</button>
+        </div>
+        <div class="tally"><span>自己說出 <b id="dtCan">0</b></span><span>說錯 <b id="dtNo">0</b></span></div>
+        <button class="btn" id="dtAgain" type="button" hidden>再玩一輪（洗牌）</button>
+      </div>
+      <div class="panel">
+        <h3>am / is / are 選一選</h3>
+        <p class="muted small">看到主詞，選出正確的 be 動詞。答對連續幾題會累積。</p>
+        <div class="stage"><div class="big" id="bvSubj"></div><div class="big" style="color:var(--muted)">___ <span id="bvRest"></span></div></div>
+        <div class="row" style="justify-content:center" id="bvOpts">
+          <button class="opt" type="button" data-v="am">am</button>
+          <button class="opt" type="button" data-v="is">is</button>
+          <button class="opt" type="button" data-v="are">are</button>
+        </div>
+        <div class="fb" id="bvFb" aria-live="polite"></div>
+        <div class="tally"><span>連續答對 <b id="bvStreak">0</b></span><span>最高 <b id="bvBest">0</b></span></div>
+        <button class="btn" id="bvNext" type="button">下一題</button>
+      </div>
+    </div>
+    <div class="cols" style="margin-top:16px">
+      <div class="col"><h3>今天會用到的句型</h3><ul class="en"><li>I am a student.</li><li>You are my friend.</li><li>He is my father.</li><li>She is my mother.</li><li>They are my parents.</li></ul></div>
+      <div class="col"><h3>容易錯的地方</h3><ul><li>He / She 後面接 is，不是 am 或 are</li><li>They 後面接 are，家人是複數時要換</li><li>I 後面固定是 am</li></ul></div>
+      <div class="col"><h3>延伸（可選）</h3><ul class="en"><li>We are a family.</li><li>My mother is kind.</li></ul><p class="small muted">這兩句還沒教過，他答得順再加。</p></div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="block" id="b-market" data-block="2">
+    <div class="block-head"><h2>夜市英文</h2><span class="when">20–32 分鐘</span></div>
+    <p class="muted">夜市英文已經玩過了，接著是拼字闖關。由他自己決定要挑戰哪些字，選完才開始。</p>
+    <div class="grid2">
+      <a class="link-card" href="https://qian0307.github.io/night-market-english/" target="_blank" rel="noopener">
+        <span class="chip" style="justify-self:start">開新分頁</span>
+        <span class="t">Night Market English</span>
+        <span class="muted">生活情境詞彙與小遊戲。玩的時候他說英文，你負責記錄哪些字卡住。</span>
+      </a>
+      <div class="panel">
+        <h3>建議的 3 個小任務</h3>
+        <ol class="mission">
+          <li><b>點餐任務</b><span class="en">What do you want? I want…</span>（用已學過的 Do you want…? 句型）</li>
+          <li><b>找東西任務</b><span class="en">Can you find the…?</span>限時找出指定的物品或食物</li>
+          <li><b>記錄任務</b>每答錯一個字，就丟進下面的拼字闖關</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h3>拼字闖關：自己選</h3>
+      <div id="spPick" style="display:grid;gap:14px">
+        <p class="muted small">請他看中文，點選自己想挑戰的字。點一下選取，再點一下取消。選完按「開始挑戰」。</p>
+        <div class="cols">
+          <div class="col"><h3>家人單字</h3><div class="pickwords" id="pkFam"></div></div>
+          <div class="col"><h3>大數字</h3><div class="pickwords" id="pkNum"></div></div>
+        </div>
+        <div class="row">
+          <button class="btn" id="spRand" type="button">幫我隨機選 5 個</button>
+          <button class="btn" id="spClear" type="button">全部取消</button>
+          <button class="btn primary" id="spStart" type="button" disabled>開始挑戰</button>
+        </div>
+      </div>
+      <div id="spPlay" hidden style="display:grid;gap:12px">
+        <div class="progress"><i id="spBar"></i></div>
+        <div class="stage">
+          <span class="chip" id="spZh"></span>
+          <div class="tiles" id="spTiles" aria-live="polite"></div>
+          <div class="muted small" id="spHint"></div>
+        </div>
+        <div class="ans" id="spAns"></div>
+        <div class="row">
+          <button class="btn" id="spHintBtn" type="button">提示首字母</button>
+          <button class="btn" id="spShuf" type="button">重新打亂</button>
+          <button class="btn" id="spShow" type="button">看答案</button>
+          <button class="btn good" id="spOk" type="button">拼對</button>
+          <button class="btn bad" id="spNo" type="button">拼錯，之後再練</button>
+        </div>
+        <div class="tally"><span>拼對 <b id="spC">0</b></span><span>待加強 <b id="spM">0</b></span></div>
+        <div class="small muted" id="spList"></div>
+        <div class="row"><button class="btn" id="spBack" type="button">回去重新選字</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="block" id="b-speak" data-block="3">
+    <div class="block-head"><h2>介紹角色</h2><span class="when">32–45 分鐘</span></div>
+    <p class="muted">他挑一個喜歡的角色，或現場畫一個。先口說，一句一句往上疊。</p>
+    <div class="say"><b>老師說</b><span class="en">Pick your favorite character. Tell me about him or her!</span></div>
+    <ol class="ladder">
+      <li><span class="lv">第 1 句</span><div><span class="en">This is my favorite character. He / She is ______.</span><div class="small muted">先說名字或是什麼角色</div></div></li>
+      <li><span class="lv">第 2 句</span><div><span class="en">He / She has ______ hair / eyes.</span><div class="small muted">用上顏色</div></div></li>
+      <li><span class="lv">第 3 句</span><div><span class="en">He / She has two ears / one nose / ______.</span><div class="small muted">用上身體部位和數字</div></div></li>
+      <li><span class="lv">第 4 句</span><div><span class="en">He / She is ______ (tall, small, happy, strong…).</span><div class="small muted">描述外表或感覺</div></div></li>
+      <li><span class="lv">第 5 句</span><div><span class="en">I like him / her because ______.</span><div class="small muted">自己的一句話，用最簡單的版本也可以，例如 I like her.</div></div></li>
+    </ol>
+    <div class="cols" style="margin-top:16px">
+      <div class="col"><h3>顏色</h3><div class="words en"><span>red</span><span>blue</span><span>yellow</span><span>green</span><span>orange</span><span>purple</span><span>pink</span><span>black</span><span>white</span><span>brown</span></div></div>
+      <div class="col"><h3>身體部位</h3><div class="words en"><span>head</span><span>hair</span><span>eyes</span><span>ears</span><span>nose</span><span>mouth</span><span>arms</span><span>hands</span><span>legs</span><span>feet</span></div></div>
+      <div class="col"><h3>數字</h3><div class="words en"><span>one</span><span>two</span><span>three</span><span>four</span><span>five</span><span>six</span><span>ten</span><span>twelve</span></div></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h3>老師追問（選著用）</h3>
+      <div class="cols">
+        <div class="col"><ul class="en"><li>Is she a girl?</li><li>What color is her hair?</li><li>How many eyes does he have?</li></ul></div>
+        <div class="col"><ul class="en"><li>What is his name?</li><li>Can you say it again?</li><li>Say it with a big voice!</li></ul></div>
+      </div>
+      <p class="small muted">He has / She has 和疑問句有些還沒練到，他聽不懂就改用手勢示範，不用硬解釋文法。</p>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="block" id="b-write" data-block="4">
+    <div class="block-head"><h2>寫下來</h2><span class="when">45–55 分鐘</span></div>
+    <p class="muted">把剛才說的寫成 5 句。右邊會即時組成短文，並提醒大寫和句號。</p>
+    <div class="grid2">
+      <div class="panel">
+        <h3>寫作欄</h3>
+        <div class="line-in"><label for="w1">第 1 句 · This is my favorite character. He / She is…</label><input id="w1" type="text" autocomplete="off" placeholder="She is a cat."><div class="flag" id="f1"></div></div>
+        <div class="line-in"><label for="w2">第 2 句 · He / She has … hair / eyes.</label><input id="w2" type="text" autocomplete="off" placeholder="She has blue eyes."><div class="flag" id="f2"></div></div>
+        <div class="line-in"><label for="w3">第 3 句 · 身體部位和數字</label><input id="w3" type="text" autocomplete="off" placeholder="She has two ears."><div class="flag" id="f3"></div></div>
+        <div class="line-in"><label for="w4">第 4 句 · He / She is …</label><input id="w4" type="text" autocomplete="off" placeholder="She is happy."><div class="flag" id="f4"></div></div>
+        <div class="line-in"><label for="w5">第 5 句 · 自己的一句話</label><input id="w5" type="text" autocomplete="off" placeholder="I like her."><div class="flag" id="f5"></div></div>
+        <div class="row"><button class="btn" id="wClear" type="button">清空</button></div>
+      </div>
+      <div class="panel">
+        <h3>他的短文</h3>
+        <div class="preview" id="wPrev" aria-live="polite"></div>
+        <div class="tally"><span>完成句數 <b id="wN">0</b> / 5</span></div>
+        <div class="say" style="margin:0"><b>檢查重點</b><span>每句開頭大寫、結尾有句號、He / She 後面是 is、has 的拼寫。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="block" id="b-review" data-block="5">
+    <div class="block-head"><h2>回顧</h2><span class="when">55–60 分鐘</span></div>
+    <p class="muted">只標記今天真的做到的。沒練到的就選「沒練到」，下次備課時才不會把計畫當成已教完。</p>
+    <div class="rv" id="rv"></div>
+    <div class="panel" style="margin-top:16px">
+      <h3>其他觀察</h3>
+      <textarea id="notes" rows="3" aria-label="其他觀察" placeholder="例如：is / are 會混淆，twenty 拼成 twenti，今天專注度不錯…"></textarea>
+      <div class="row">
+        <button class="btn primary" id="mkRec" type="button">產生上課紀錄</button>
+        <button class="btn" id="cpRec" type="button">複製</button>
+        <button class="btn" id="rvClear" type="button">清空標記</button>
+      </div>
+      <div class="record" id="rec" aria-live="polite">按下「產生上課紀錄」，這裡會出現可貼到 Discord 匯報的文字。</div>
+    </div>
+    <h2 style="margin-top:36px;font-size:1.25rem">如果他不想配合</h2>
+    <div class="flex" style="margin-top:12px">
+      <div><b>注意力掉下來</b>立刻換成遊戲環節，把目前這段縮短 2 分鐘。</div>
+      <div><b>不想開口說</b>給他選擇：「你要先說，還是先畫？」畫完再說會輕鬆很多。</div>
+      <div><b>is / are 一直錯</b>回到身分偵探，只留 He is / She is / They are 三句，換不同卡片再玩一輪。</div>
+      <div><b>很快全部做完</b>加入延伸句：We are a family. My mother is kind.，或讓他幫你出題。</div>
+    </div>
+  </section>
+
+  <footer>今天不另外派作業，Writing 的 5 句短文就是當天的成果。</footer>
+</div>
+
+<script>
+(function(){
+  var $=function(s,r){return (r||document).querySelector(s)};
+  var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+  function store(k,v){try{if(v===undefined){return JSON.parse(localStorage.getItem(k)||'null')}localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}}
+  function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+
+  /* ---------- lesson clock ---------- */
+  var BLOCKS=[{n:'開場任務',m:5,id:'b-warm'},{n:'身分偵探',m:15,id:'b-detective'},{n:'夜市英文',m:12,id:'b-market'},{n:'介紹角色',m:13,id:'b-speak'},{n:'寫下來',m:10,id:'b-write'},{n:'回顧',m:5,id:'b-review'}];
+  var cur=-1,left=60*60,running=false,tick=null;
+  var bar=$('#clockBar');
+  BLOCKS.forEach(function(b){var i=document.createElement('i');i.style.flex=b.m+' 1 0';bar.appendChild(i)});
+  function fmt(s){var neg=s<0;s=Math.abs(s);return (neg?'+':'')+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+  function paintClock(){
+    var t=$('#clockTime');t.textContent=fmt(left);t.classList.toggle('over',left<0);
+    $('#clockName').textContent=cur<0?'尚未開始':BLOCKS[cur].n;
+    $$('i',bar).forEach(function(el,i){el.className=i<cur?'done':(i===cur?'cur':'')});
+    $('#clkStart').textContent=cur<0?'開始上課':(running?'暫停':'繼續');
+    $('#clkNext').disabled=cur>=BLOCKS.length-1&&cur>=0;
+  }
+  function go(i){cur=i;left=BLOCKS[i].m*60;var el=document.getElementById(BLOCKS[i].id);if(el){el.scrollIntoView({behavior:'smooth',block:'start'})}paintClock()}
+  function run(){if(tick)return;running=true;tick=setInterval(function(){left--;paintClock()},1000);paintClock()}
+  function pause(){running=false;clearInterval(tick);tick=null;paintClock()}
+  $('#clkStart').addEventListener('click',function(){if(cur<0){go(0);run()}else if(running){pause()}else{run()}});
+  $('#clkNext').addEventListener('click',function(){if(cur<BLOCKS.length-1){go(cur+1);if(!running)run()}});
+  $('#clkReset').addEventListener('click',function(){pause();cur=-1;left=3600;paintClock()});
+  paintClock();
+
+  /* ---------- 1. warm-up cards ---------- */
+  var COLORS={red:'#E03A2F',blue:'#2F6FE0',yellow:'#F2C21E',green:'#2FA35B',orange:'#F08A24',purple:'#8A4FD0',pink:'#F28BB5',black:'#1A1A1A',white:'#FFFFFF',brown:'#8B5A2B',gray:'#9AA0A6'};
+  var SHAPES={
+    circle:'<circle cx="50" cy="50" r="40"/>',
+    square:'<rect x="12" y="12" width="76" height="76"/>',
+    triangle:'<polygon points="50,10 92,88 8,88"/>',
+    rectangle:'<rect x="6" y="26" width="88" height="48"/>',
+    star:'<polygon points="50,6 62,38 96,38 68,58 78,92 50,70 22,92 32,58 4,38 38,38"/>',
+    heart:'<path d="M50 88 C10 58 6 30 28 20 C40 15 48 22 50 30 C52 22 60 15 72 20 C94 30 90 58 50 88Z"/>',
+    oval:'<ellipse cx="50" cy="50" rx="44" ry="28"/>',
+    diamond:'<polygon points="50,6 92,50 50,94 8,50"/>'
+  };
+  var NUMS={11:'eleven',12:'twelve',13:'thirteen',14:'fourteen',15:'fifteen',16:'sixteen',17:'seventeen',18:'eighteen',19:'nineteen'};
+  var warmAll=[];
+  Object.keys(COLORS).forEach(function(k){warmAll.push({k:'color',en:k,vis:'<div class="swatch" style="background:'+COLORS[k]+'"></div>',tag:'顏色'})});
+  Object.keys(SHAPES).forEach(function(k){warmAll.push({k:'shape',en:k,vis:'<svg class="shape" viewBox="0 0 100 100" fill="var(--teal)" aria-hidden="true">'+SHAPES[k]+'</svg>',tag:'形狀'})});
+  Object.keys(NUMS).forEach(function(n){warmAll.push({k:'num',en:NUMS[n],vis:'<div class="big">'+n+'</div>',tag:'數字'})});
+  var wk='all',wDeck=[],wi=0,wC=0,wM=0,wShown=false;
+  function wBuild(){wDeck=shuffle(warmAll.filter(function(c){return wk==='all'||c.k===wk}));wi=0;wC=0;wM=0;wRender()}
+  function wRender(){
+    wShown=false;$('#warmAns').textContent='';
+    var done=wi>=wDeck.length;
+    $('#warmStage').innerHTML=done?'<div class="big">Great job!</div><div class="muted">這一輪結束，可以換類型或重新洗牌。</div>':'<span class="chip">'+wDeck[wi].tag+'</span>'+wDeck[wi].vis+'<div class="muted small">用英文說說看</div>';
+    $('#warmC').textContent=wC;$('#warmM').textContent=wM;
+    $('#warmLeft').textContent=done?'':'剩 '+(wDeck.length-wi)+' 張';
+    ['#warmShow','#warmOk','#warmNo'].forEach(function(s){$(s).disabled=done});
+  }
+  function wNext(good){if(wi>=wDeck.length)return;if(good)wC++;else wM++;wi++;wRender()}
+  $('#warmShow').addEventListener('click',function(){if(wi<wDeck.length){$('#warmAns').textContent=wDeck[wi].en}});
+  $('#warmOk').addEventListener('click',function(){wNext(true)});
+  $('#warmNo').addEventListener('click',function(){wNext(false)});
+  $$('#warmTabs .tab').forEach(function(b){b.addEventListener('click',function(){wk=b.dataset.k;$$('#warmTabs .tab').forEach(function(x){x.setAttribute('aria-pressed',x===b)});wBuild()})});
+  wBuild();
+  var chT=null,chN=30;
+  $('#chGo').addEventListener('click',function(){
+    if(chT)clearInterval(chT);
+    wBuild();chN=30;$('#chTime').textContent=chN;$('#chMsg').textContent='開始！';
+    chT=setInterval(function(){chN--;$('#chTime').textContent=chN;if(chN<=0){clearInterval(chT);chT=null;$('#chMsg').textContent='時間到，答對 '+wC+' 題';$('#chTime').textContent='0'}},1000);
+  });
+
+  /* ---------- 2. identity cards ---------- */
+  var PEOPLE=[
+    {zh:'媽媽',q:'Who is she?',a:'She is my mother.',h:'She is…'},
+    {zh:'爸爸',q:'Who is he?',a:'He is my father.',h:'He is…'},
+    {zh:'姊姊',q:'Who is she?',a:'She is my sister.',h:'She is…'},
+    {zh:'哥哥',q:'Who is he?',a:'He is my brother.',h:'He is…'},
+    {zh:'奶奶',q:'Who is she?',a:'She is my grandma.',h:'She is…'},
+    {zh:'爺爺',q:'Who is he?',a:'He is my grandpa.',h:'He is…'},
+    {zh:'爸爸和媽媽',q:'Who are they?',a:'They are my parents.',h:'They are…'},
+    {zh:'你自己',q:'Who are you?',a:'I am a student.',h:'I am…'},
+    {zh:'老師（指著老師）',q:'Who am I?',a:'You are my teacher.',h:'You are…'},
+    {zh:'一個男生朋友',q:'Who is he?',a:'He is my friend.',h:'He is…'},
+    {zh:'兩個女生朋友',q:'Who are they?',a:'They are my friends.',h:'They are…'}
+  ];
+  var dDeck=[],di=0,dCan=0,dNo=0,dWait=false;
+  function dBuild(){dDeck=shuffle(PEOPLE);di=0;dCan=0;dNo=0;dWait=false;$('#dtAgain').hidden=true;dRender()}
+  function dRender(){
+    $('#dtAns').textContent='';
+    var done=di>=dDeck.length;
+    $('#dtStage').innerHTML=done?'<div class="big">Mission clear!</div><div class="muted">這一輪完成，看看下方的統計。</div>':'<span class="chip">'+dDeck[di].zh+'</span><div class="big" style="font-size:clamp(1.75rem,7vw,2.5rem)">'+dDeck[di].q+'</div>';
+    $('#dtCan').textContent=dCan;$('#dtNo').textContent=dNo;
+    $('#dtBar').style.width=Math.round(di/dDeck.length*100)+'%';
+    $$('[data-dt]').forEach(function(b){b.disabled=done||dWait});
+    $('#dtNext').hidden=!dWait;
+    $('#dtAgain').hidden=!done;
+  }
+  $$('[data-dt]').forEach(function(b){b.addEventListener('click',function(){
+    if(di>=dDeck.length||dWait)return;
+    if(b.dataset.dt==='can'){dCan++;di++;dRender()}
+    else{dNo++;dWait=true;dRender();$('#dtAns').textContent='跟我說：'+dDeck[di].a}
+  })});
+  $('#dtNext').addEventListener('click',function(){dWait=false;di++;dRender()});
+  $('#dtAgain').addEventListener('click',dBuild);
+  dBuild();
+
+  /* teaching: be verb */
+  var BE={
+    I:{v:'am',ex:'I am a student.',zh:'我是學生。',cue:'搭配動作：指自己'},
+    You:{v:'are',ex:'You are my friend.',zh:'你是我的朋友。',cue:'搭配動作：指對方'},
+    He:{v:'is',ex:'He is my father.',zh:'他是我的爸爸。',cue:'搭配動作：指一個男生'},
+    She:{v:'is',ex:'She is my mother.',zh:'她是我的媽媽。',cue:'搭配動作：指一個女生'},
+    They:{v:'are',ex:'They are my parents.',zh:'他們是我的爸媽。',cue:'搭配動作：指兩個以上的人'}
+  };
+  function bePick(k){
+    var d=BE[k];
+    $$('#bePick .tab').forEach(function(x){x.setAttribute('aria-pressed',x.dataset.k===k)});
+    $('#beShow').innerHTML='<div class="big">'+k+' <span style="color:var(--accent)">'+d.v+'</span></div><div class="en" style="font-size:1.25rem">'+d.ex+'</div><div class="muted">'+d.zh+'</div><span class="chip">'+d.cue+'</span>';
+  }
+  $$('#bePick .tab').forEach(function(b){b.addEventListener('click',function(){bePick(b.dataset.k)})});
+  bePick('I');
+  var TCH=[['I am a student.','指自己'],['You are my friend.','指他'],['He is my father.','指爸爸的卡片'],['She is my mother.','指媽媽的卡片'],['They are my parents.','指兩張卡片']];
+  var tr=$('#tchRows');
+  TCH.forEach(function(r){
+    var row=document.createElement('tr');
+    row.innerHTML='<td class="en">'+r[0]+'</td><td>'+r[1]+'</td><td><button class="btn tog" type="button" aria-pressed="false">他說對了</button></td>';
+    tr.appendChild(row);
+  });
+  tr.addEventListener('click',function(e){var b=e.target.closest('.tog');if(!b)return;b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')});
+
+  /* am / is / are */
+  var SUBJ=[{s:'I',v:'am',r:'a student.'},{s:'You',v:'are',r:'my friend.'},{s:'He',v:'is',r:'my father.'},{s:'She',v:'is',r:'my mother.'},{s:'They',v:'are',r:'my parents.'},{s:'We',v:'are',r:'a family.'},{s:'My sister',v:'is',r:'at home.'},{s:'My friends',v:'are',r:'happy.'}];
+  var bq=null,bs=0,bb=0,bLocked=false;
+  function bNew(){
+    var n;do{n=SUBJ[Math.floor(Math.random()*SUBJ.length)]}while(n===bq);bq=n;bLocked=false;
+    $('#bvSubj').textContent=n.s;$('#bvRest').textContent=n.r;$('#bvFb').textContent='';$('#bvFb').className='fb';
+    $$('#bvOpts .opt').forEach(function(o){o.className='opt'});
+  }
+  $$('#bvOpts .opt').forEach(function(o){o.addEventListener('click',function(){
+    if(bLocked)return;bLocked=true;
+    if(o.dataset.v===bq.v){o.classList.add('right');bs++;if(bs>bb)bb=bs;$('#bvFb').textContent='Yes! '+bq.s+' '+bq.v+' '+bq.r;$('#bvFb').className='fb ok'}
+    else{o.classList.add('wrong');bs=0;$$('#bvOpts .opt').forEach(function(x){if(x.dataset.v===bq.v)x.classList.add('right')});$('#bvFb').textContent='再想一下：'+bq.s+' '+bq.v+' '+bq.r;$('#bvFb').className='fb no'}
+    $('#bvStreak').textContent=bs;$('#bvBest').textContent=bb;
+  })});
+  $('#bvNext').addEventListener('click',bNew);
+  bNew();
+
+  /* ---------- 3. spelling (self-selected) ---------- */
+  var FAM=[['mother','媽媽'],['father','爸爸'],['sister','姊姊／妹妹'],['brother','哥哥／弟弟'],['grandma','奶奶／外婆'],['grandpa','爺爺／外公'],['family','家人'],['parents','父母'],['baby','嬰兒'],['friend','朋友']];
+  var NUM=[['eleven','11'],['twelve','12'],['thirteen','13'],['fourteen','14'],['fifteen','15'],['sixteen','16'],['seventeen','17'],['eighteen','18'],['nineteen','19'],['twenty','20'],['thirty','30'],['forty','40'],['fifty','50']];
+  var ALLW=FAM.concat(NUM),sel={},sDeck=[],si=0,sC=0,sM=0,sMiss=[];
+  function pkBuild(box,list){
+    list.forEach(function(w){
+      var b=document.createElement('button');b.type='button';b.className='pw';b.dataset.w=w[0];b.textContent=w[1];b.setAttribute('aria-pressed','false');box.appendChild(b);
+    });
+  }
+  pkBuild($('#pkFam'),FAM);pkBuild($('#pkNum'),NUM);
+  function pkPaint(){
+    var n=0;
+    $$('.pw').forEach(function(b){var on=!!sel[b.dataset.w];b.setAttribute('aria-pressed',on);if(on)n++});
+    $('#spStart').disabled=n===0;
+    $('#spStart').textContent=n?'開始挑戰（'+n+' 個字）':'開始挑戰';
+  }
+  $$('.pickwords').forEach(function(box){box.addEventListener('click',function(e){
+    var b=e.target.closest('.pw');if(!b)return;
+    if(sel[b.dataset.w])delete sel[b.dataset.w];else sel[b.dataset.w]=1;
+    pkPaint();
+  })});
+  $('#spClear').addEventListener('click',function(){sel={};pkPaint()});
+  $('#spRand').addEventListener('click',function(){
+    sel={};shuffle(ALLW).slice(0,5).forEach(function(w){sel[w[0]]=1});pkPaint();
+  });
+  function scramble(w){var a=w.split(''),n=0;do{a=shuffle(a);n++}while(a.join('')===w&&n<20);return a}
+  function sTiles(a){$('#spTiles').innerHTML=a.map(function(c){return '<span class="tile">'+c+'</span>'}).join('')}
+  function sRender(){
+    $('#spAns').textContent='';$('#spHint').textContent='';
+    var done=si>=sDeck.length;
+    if(done){$('#spZh').textContent='完成';$('#spTiles').innerHTML='<div class="big">All done!</div>'}
+    else{$('#spZh').textContent=sDeck[si][1];sTiles(scramble(sDeck[si][0]))}
+    $('#spBar').style.width=Math.round(si/sDeck.length*100)+'%';
+    $('#spC').textContent=sC;$('#spM').textContent=sM;
+    $('#spList').textContent=sMiss.length?'待加強：'+sMiss.join('、'):'';
+    ['#spHintBtn','#spShuf','#spShow','#spOk','#spNo'].forEach(function(x){$(x).disabled=done});
+  }
+  $('#spStart').addEventListener('click',function(){
+    sDeck=shuffle(ALLW.filter(function(w){return sel[w[0]]}));
+    if(!sDeck.length)return;
+    si=0;sC=0;sM=0;sMiss=[];
+    $('#spPick').hidden=true;$('#spPlay').hidden=false;sRender();
+  });
+  $('#spBack').addEventListener('click',function(){$('#spPlay').hidden=true;$('#spPick').hidden=false});
+  $('#spShuf').addEventListener('click',function(){if(si<sDeck.length)sTiles(scramble(sDeck[si][0]))});
+  $('#spHintBtn').addEventListener('click',function(){if(si<sDeck.length){$('#spHint').textContent='第一個字母是 '+sDeck[si][0][0].toUpperCase()+'，共 '+sDeck[si][0].length+' 個字母'}});
+  $('#spShow').addEventListener('click',function(){if(si<sDeck.length)$('#spAns').textContent=sDeck[si][0]});
+  $('#spOk').addEventListener('click',function(){if(si<sDeck.length){sC++;si++;sRender()}});
+  $('#spNo').addEventListener('click',function(){if(si<sDeck.length){sM++;sMiss.push(sDeck[si][0]);si++;sRender()}});
+  pkPaint();
+
+  /* ---------- 5. writing ---------- */
+  var W=['w1','w2','w3','w4','w5'];
+  function flagFor(t){
+    t=t.trim();if(!t)return '';var f=[];
+    if(!/^[A-Z]/.test(t))f.push('開頭要大寫');
+    if(!/[.!?]$/.test(t))f.push('結尾加句號');
+    return f.join('，');
+  }
+  function wPaint(){
+    var parts=[],saved=[];
+    W.forEach(function(id,i){
+      var v=$('#'+id).value;saved.push(v);
+      $('#f'+(i+1)).textContent=flagFor(v);
+      if(v.trim())parts.push(v.trim());
+    });
+    $('#wPrev').textContent=parts.length?parts.join(' '):'他寫的句子會出現在這裡。';
+    $('#wN').textContent=parts.length;
+    store('en1023_write',saved);
+  }
+  var sv=store('en1023_write');
+  if(sv&&sv.length){W.forEach(function(id,i){$('#'+id).value=sv[i]||''})}
+  W.forEach(function(id){$('#'+id).addEventListener('input',wPaint)});
+  $('#wClear').addEventListener('click',function(){W.forEach(function(id){$('#'+id).value=''});wPaint()});
+  wPaint();
+
+  /* ---------- 6. review ---------- */
+  var ITEMS=[
+    'I am / You are（用在自己和對方）','He is / She is（指著人說）','They are（兩個人以上）',
+    '家人單字拼寫（mother、sister、grandma…）','大數字拼寫（eleven 到 twenty）','顏色、形狀、11–19 複習','5 句角色介紹（口說）','5 句角色介紹（寫出來）'
+  ];
+  var LBL={can:'能自己用',hint:'需要提示',no:'沒練到'};
+  var rvState=store('en1023_rv')||{};
+  var rv=$('#rv');
+  ITEMS.forEach(function(t,i){
+    var d=document.createElement('div');d.className='rv-item';
+    d.innerHTML='<div>'+t+'</div><div class="seg" role="group" aria-label="'+t+'">'+['can','hint','no'].map(function(k){return '<button type="button" data-v="'+k+'" data-i="'+i+'" aria-pressed="'+(rvState[i]===k)+'">'+LBL[k]+'</button>'}).join('')+'</div>';
+    rv.appendChild(d);
+  });
+  rv.addEventListener('click',function(e){
+    var b=e.target.closest('button[data-v]');if(!b)return;
+    var i=b.dataset.i;rvState[i]=b.dataset.v;
+    $$('button[data-i="'+i+'"]',rv).forEach(function(x){x.setAttribute('aria-pressed',x===b)});
+    store('en1023_rv',rvState);
+  });
+  var nt=store('en1023_notes');if(typeof nt==='string')$('#notes').value=nt;
+  $('#notes').addEventListener('input',function(){store('en1023_notes',this.value)});
+  function mkRec(){
+    var g={can:[],hint:[],no:[]};
+    ITEMS.forEach(function(t,i){var v=rvState[i];if(v)g[v].push(t.replace(/（.*）/,''))});
+    var lines=['【10/23 英文】本次實際完成內容'];
+    if(g.can.length)lines.push('能自己用：'+g.can.join('、'));
+    if(g.hint.length)lines.push('需要提示：'+g.hint.join('、'));
+    if(g.no.length)lines.push('沒練到：'+g.no.join('、'));
+    if(sMiss.length)lines.push('拼字待加強：'+sMiss.join('、'));
+    var n=$('#notes').value.trim();if(n)lines.push('觀察：'+n);
+    var w=W.map(function(id){return $('#'+id).value.trim()}).filter(Boolean);
+    if(w.length)lines.push('短文：'+w.join(' '));
+    if(lines.length===1)lines.push('（尚未標記任何項目）');
+    $('#rec').textContent=lines.join('\n');
+  }
+  $('#mkRec').addEventListener('click',mkRec);
+  $('#cpRec').addEventListener('click',function(){
+    mkRec();var txt=$('#rec').textContent;var btn=this;
+    function ok(){btn.textContent='已複製';setTimeout(function(){btn.textContent='複製'},1500)}
+    function fb(){var r=document.createRange();r.selectNodeContents($('#rec'));var s=window.getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='已選取，請手動複製';setTimeout(function(){btn.textContent='複製'},2500)}
+    try{navigator.clipboard.writeText(txt).then(ok,fb)}catch(e){fb()}
+  });
+  $('#rvClear').addEventListener('click',function(){rvState={};store('en1023_rv',rvState);$$('button[data-v]',rv).forEach(function(x){x.setAttribute('aria-pressed','false')});$('#rec').textContent='按下「產生上課紀錄」，這裡會出現可貼到 Discord 匯報的文字。'});
+})();
+</script>
+
+</body>
+</html>
