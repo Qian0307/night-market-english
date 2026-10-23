@@ -123,6 +123,15 @@ details.chk p{margin-top:4px;font-family:var(--font-display);font-weight:600;col
 .tile.mv.dragging{cursor:grabbing;position:relative;z-index:5;transition:none;box-shadow:0 8px 18px rgba(0,0,0,.28);border-color:var(--accent)}
 .tile.mv.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
 .tile.okt{border-color:var(--good);background:color-mix(in srgb,var(--good) 22%,var(--surface))}
+.mg-board{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:12px}
+.mg-col{display:grid;gap:8px;align-content:start;min-width:0}
+.mgc{border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 12px;font-family:var(--font-display);font-size:1.25rem;font-weight:600;min-height:54px;text-align:left;overflow-wrap:anywhere;transition:background .15s,border-color .15s}
+.mgc:hover{background:var(--tint)}
+.mgc.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
+.mgc.ok{border-color:var(--good);background:color-mix(in srgb,var(--good) 20%,var(--surface));cursor:default}
+.mgc.bad{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 18%,var(--surface))}
+.mgsent{display:flex;flex-wrap:wrap;gap:8px}
+.mgsent span{background:var(--tint);border-radius:8px;padding:4px 12px;font-size:1.0625rem}
 .pickwords{display:flex;flex-wrap:wrap;gap:8px}
 .pw{border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 16px;font-weight:500;font-size:1.0625rem;min-height:44px}
 .pw:hover{background:var(--tint)}
@@ -213,7 +222,7 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:v
         <thead><tr><th>時間</th><th>環節</th><th>做什麼</th></tr></thead>
         <tbody>
           <tr><td>0–5</td><td>開場任務</td><td>顏色、形狀、11–19 快問快答，用熟悉的內容暖身</td></tr>
-          <tr><td>5–20</td><td>教學＋身分偵探</td><td>前 5 分鐘教 be 動詞，後 10 分鐘看卡片說完整句，練習時不給提示</td></tr>
+          <tr><td>5–20</td><td>教學＋身分偵探</td><td>前 5 分鐘教 be 動詞，後 10 分鐘先玩配對、再看卡片說完整句，練習時不給提示</td></tr>
           <tr><td>20–32</td><td>夜市英文</td><td>玩夜市英文，接著由他自己選字做拼字闖關</td></tr>
           <tr><td>32–45</td><td>介紹角色</td><td>選一個角色，用 He/She is、has 說出 5 句</td></tr>
           <tr><td>45–55</td><td>寫下來</td><td>把剛才說的寫成句子，檢查大寫和句號</td></tr>
@@ -302,6 +311,25 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:v
         </div>
         <p class="small muted" style="margin-top:8px">三題都能自己答出來，再進入下面的身分卡。答錯的那題回到第 2 步再指一次。</p>
       </div>
+    </div>
+
+    <div class="panel" id="mg" style="margin-top:16px">
+      <h3>配對小遊戲：誰配哪一句？（約 3 分鐘）</h3>
+      <p class="muted small">先點左邊的人，再點右邊的句子後半。配對成功會合成完整句，配錯會閃紅色，不給提示，由他自己想。</p>
+      <div class="tabs" id="mgTabs" role="group" aria-label="選題組">
+        <button class="tab" type="button" data-k="0" aria-pressed="true">第一組</button>
+        <button class="tab" type="button" data-k="1" aria-pressed="false">第二組</button>
+        <button class="tab" type="button" data-k="2" aria-pressed="false">第三組</button>
+        <button class="tab" type="button" data-k="r" aria-pressed="false">隨機</button>
+      </div>
+      <div class="mg-board" id="mgBoard">
+        <div class="mg-col" id="mgL"></div>
+        <div class="mg-col" id="mgR"></div>
+      </div>
+      <div class="fb" id="mgFb" aria-live="polite"></div>
+      <div class="tally"><span>已配對 <b id="mgDone">0</b> / <b id="mgTotal">5</b></span><span>配錯 <b id="mgMiss">0</b></span></div>
+      <div class="mgsent en" id="mgSent"></div>
+      <div class="row"><button class="btn" id="mgAgain" type="button">重玩這組</button></div>
     </div>
 
     <div class="say"><b>老師說</b><span class="en">You are a detective. Who is she? Who are they? Answer with a full sentence.</span></div>
@@ -601,6 +629,54 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:v
     tr.appendChild(row);
   });
   tr.addEventListener('click',function(e){var b=e.target.closest('.tog');if(!b)return;b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')});
+
+  /* matching game */
+  var MG=[
+    [['I','am a student.'],['You','are my friend.'],['He','is my father.'],['She','is my mother.'],['They','are my parents.']],
+    [['I','am at home.'],['You','are my teacher.'],['He','is my brother.'],['She','is my sister.'],['They','are my friends.']],
+    [['I','am happy.'],['You','are a good friend.'],['He','is my grandpa.'],['She','is my grandma.'],['They','are my sisters.']]
+  ];
+  var mgKey='0',mgPairs=[],mgSel=null,mgDone=0,mgMiss=0,mgLock=false;
+  function mgCard(t,i,side){var b=document.createElement('button');b.type='button';b.className='mgc';b.dataset.i=i;b.dataset.s=side;b.textContent=t;return b}
+  function mgCount(){$('#mgDone').textContent=mgDone;$('#mgMiss').textContent=mgMiss;$('#mgTotal').textContent=mgPairs.length}
+  function mgBuild(k){
+    mgKey=k;
+    if(k==='r'){
+      var all=[].concat.apply([],MG);
+      mgPairs=['I','You','He','She','They'].map(function(sb){var c=all.filter(function(p){return p[0]===sb});return c[Math.floor(Math.random()*c.length)]});
+    }else{mgPairs=MG[+k]}
+    mgSel=null;mgDone=0;mgMiss=0;mgLock=false;
+    var L=$('#mgL'),R=$('#mgR');L.innerHTML='';R.innerHTML='';
+    var idx=mgPairs.map(function(p,i){return i});
+    shuffle(idx).forEach(function(i){L.appendChild(mgCard(mgPairs[i][0],i,'L'))});
+    shuffle(idx).forEach(function(i){R.appendChild(mgCard(mgPairs[i][1],i,'R'))});
+    $('#mgSent').innerHTML='';$('#mgFb').className='fb';$('#mgFb').textContent='';
+    $$('#mgTabs .tab').forEach(function(x){x.setAttribute('aria-pressed',x.dataset.k===k)});
+    mgCount();
+  }
+  $('#mgBoard').addEventListener('click',function(e){
+    var b=e.target.closest('.mgc');
+    if(!b||mgLock||b.classList.contains('ok'))return;
+    if(!mgSel){mgSel=b;b.classList.add('sel');return}
+    if(mgSel===b){b.classList.remove('sel');mgSel=null;return}
+    if(mgSel.dataset.s===b.dataset.s){mgSel.classList.remove('sel');mgSel=b;b.classList.add('sel');return}
+    var a=mgSel;mgSel=null;a.classList.remove('sel');
+    if(a.dataset.i===b.dataset.i){
+      a.classList.add('ok');b.classList.add('ok');mgDone++;
+      var p=mgPairs[+a.dataset.i];
+      var sp=document.createElement('span');sp.textContent=p[0]+' '+p[1];$('#mgSent').appendChild(sp);
+      $('#mgFb').className='fb ok';
+      $('#mgFb').textContent=mgDone===mgPairs.length?'全部配對完成！配錯 '+mgMiss+' 次。請他把這幾句連起來唸一遍。':'Yes! '+p[0]+' '+p[1];
+    }else{
+      mgMiss++;mgLock=true;a.classList.add('bad');b.classList.add('bad');
+      $('#mgFb').className='fb no';$('#mgFb').textContent='再想一下';
+      setTimeout(function(){a.classList.remove('bad');b.classList.remove('bad');mgLock=false},700);
+    }
+    mgCount();
+  });
+  $$('#mgTabs .tab').forEach(function(b){b.addEventListener('click',function(){mgBuild(b.dataset.k)})});
+  $('#mgAgain').addEventListener('click',function(){mgBuild(mgKey)});
+  mgBuild('0');
 
   /* am / is / are */
   var SUBJ=[{s:'I',v:'am',r:'a student.'},{s:'You',v:'are',r:'my friend.'},{s:'He',v:'is',r:'my father.'},{s:'She',v:'is',r:'my mother.'},{s:'They',v:'are',r:'my parents.'},{s:'We',v:'are',r:'a family.'},{s:'My sister',v:'is',r:'at home.'},{s:'My friends',v:'are',r:'happy.'}];
