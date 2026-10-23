@@ -119,6 +119,10 @@ details.chk{background:var(--tint);border-radius:8px;padding:8px 12px}
 details.chk summary{cursor:pointer;font-weight:500}
 details.chk p{margin-top:4px;font-family:var(--font-display);font-weight:600;color:var(--teal)}
 .tog[aria-pressed="true"]{background:var(--good);border-color:var(--good);color:#fff}
+.tile.mv{min-width:52px;height:60px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;color:var(--fg);transition:transform .15s,border-color .15s,background .15s}
+.tile.mv.dragging{cursor:grabbing;position:relative;z-index:5;transition:none;box-shadow:0 8px 18px rgba(0,0,0,.28);border-color:var(--accent)}
+.tile.mv.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface))}
+.tile.okt{border-color:var(--good);background:color-mix(in srgb,var(--good) 22%,var(--surface))}
 .pickwords{display:flex;flex-wrap:wrap;gap:8px}
 .pw{border:2px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 16px;font-weight:500;font-size:1.0625rem;min-height:44px}
 .pw:hover{background:var(--tint)}
@@ -374,13 +378,15 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:v
         <div class="progress"><i id="spBar"></i></div>
         <div class="stage">
           <span class="chip" id="spZh"></span>
-          <div class="tiles" id="spTiles" aria-live="polite"></div>
+          <div class="tiles" id="spTiles"></div>
+          <div class="muted small">拖曳字母換位置，或點兩個字母互換。排好後按「檢查」。</div>
           <div class="muted small" id="spHint"></div>
         </div>
         <div class="ans" id="spAns"></div>
         <div class="row">
           <button class="btn" id="spHintBtn" type="button">提示首字母</button>
           <button class="btn" id="spShuf" type="button">重新打亂</button>
+          <button class="btn primary" id="spCheck" type="button">檢查</button>
           <button class="btn" id="spShow" type="button">看答案</button>
           <button class="btn good" id="spOk" type="button">拼對</button>
           <button class="btn bad" id="spNo" type="button">拼錯，之後再練</button>
@@ -639,7 +645,65 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:v
     sel={};shuffle(ALLW).slice(0,5).forEach(function(w){sel[w[0]]=1});pkPaint();
   });
   function scramble(w){var a=w.split(''),n=0;do{a=shuffle(a);n++}while(a.join('')===w&&n<20);return a}
-  function sTiles(a){$('#spTiles').innerHTML=a.map(function(c){return '<span class="tile">'+c+'</span>'}).join('')}
+  var spCur=[],spSel=-1,spBox=$('#spTiles'),drag=null;
+  function sDraw(ok){
+    spBox.innerHTML='';
+    spCur.forEach(function(c,i){
+      var t=document.createElement('button');t.type='button';
+      t.className='tile mv'+(ok?' okt':'')+(i===spSel?' selected':'');
+      t.dataset.i=i;t.textContent=c;t.setAttribute('aria-label','字母 '+c+'，可用左右鍵移動');
+      spBox.appendChild(t);
+    });
+  }
+  function sTiles(a){spCur=a.slice();spSel=-1;sDraw()}
+  function spMove(from,to){var c=spCur.splice(from,1)[0];spCur.splice(to,0,c);spSel=-1;sDraw();$('#spAns').textContent=''}
+  spBox.addEventListener('pointerdown',function(e){
+    var t=e.target.closest('.mv');if(!t)return;
+    e.preventDefault();
+    try{t.setPointerCapture(e.pointerId)}catch(x){}
+    drag={el:t,i:+t.dataset.i,sx:e.clientX,sy:e.clientY,moved:false};
+    t.classList.add('dragging');
+  });
+  spBox.addEventListener('pointermove',function(e){
+    if(!drag)return;
+    var dx=e.clientX-drag.sx,dy=e.clientY-drag.sy;
+    if(Math.abs(dx)+Math.abs(dy)>8)drag.moved=true;
+    drag.el.style.transform='translate('+dx+'px,'+dy+'px)';
+  });
+  function spEnd(e,cancel){
+    if(!drag)return;
+    var d=drag;drag=null;
+    var to=null;
+    if(!cancel&&d.moved){
+      d.el.style.pointerEvents='none';
+      var under=document.elementFromPoint(e.clientX,e.clientY);
+      d.el.style.pointerEvents='';
+      to=under&&under.closest?under.closest('.mv'):null;
+    }
+    if(!cancel&&d.moved&&to&&to!==d.el){spMove(d.i,+to.dataset.i);return}
+    d.el.style.transform='';d.el.classList.remove('dragging');
+    if(!cancel&&!d.moved){
+      if(spSel<0){spSel=d.i}
+      else if(spSel===d.i){spSel=-1}
+      else{var a=spCur[spSel];spCur[spSel]=spCur[d.i];spCur[d.i]=a;spSel=-1;$('#spAns').textContent=''}
+      sDraw();
+    }
+  }
+  spBox.addEventListener('pointerup',function(e){spEnd(e,false)});
+  spBox.addEventListener('pointercancel',function(e){spEnd(e,true)});
+  spBox.addEventListener('keydown',function(e){
+    var t=e.target.closest('.mv');if(!t)return;
+    var i=+t.dataset.i,j=e.key==='ArrowLeft'?i-1:(e.key==='ArrowRight'?i+1:-1);
+    if(j<0||j>=spCur.length)return;
+    e.preventDefault();spMove(i,j);
+    var nb=spBox.querySelector('.mv[data-i="'+j+'"]');if(nb)nb.focus();
+  });
+  $('#spCheck').addEventListener('click',function(){
+    if(si>=sDeck.length)return;
+    var ok=spCur.join('')===sDeck[si][0];
+    sDraw(ok);
+    $('#spAns').textContent=ok?'Yes! '+sDeck[si][0]:'還不對，再移動看看';
+  });
   function sRender(){
     $('#spAns').textContent='';$('#spHint').textContent='';
     var done=si>=sDeck.length;
@@ -648,7 +712,7 @@ footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:v
     $('#spBar').style.width=Math.round(si/sDeck.length*100)+'%';
     $('#spC').textContent=sC;$('#spM').textContent=sM;
     $('#spList').textContent=sMiss.length?'待加強：'+sMiss.join('、'):'';
-    ['#spHintBtn','#spShuf','#spShow','#spOk','#spNo'].forEach(function(x){$(x).disabled=done});
+    ['#spHintBtn','#spShuf','#spCheck','#spShow','#spOk','#spNo'].forEach(function(x){$(x).disabled=done});
   }
   $('#spStart').addEventListener('click',function(){
     sDeck=shuffle(ALLW.filter(function(w){return sel[w[0]]}));
