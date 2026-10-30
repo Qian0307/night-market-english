@@ -1,0 +1,1114 @@
+<title>家族大宅密室</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: full-screen first-person 3D house; HUD on top; 2D puzzle panel over the scene. Lantern-lit mansion at night: ink navy, lamp gold, jade, brick. */
+:root{
+  --ink:#141831; --ink2:#212749; --ink3:#2e3562; --paper:#f7f0df; --gold:#f2b84b; --jade:#3fb8a0; --brick:#e0574f; --muted:#a8a9c4;
+  --display:'Fredoka','Noto Sans TC',system-ui,sans-serif; --body:'Noto Sans TC',system-ui,sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--body);font-size:16px;overflow:hidden}
+#app{position:relative;width:100%;height:100%;overflow:hidden;background:var(--ink)}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+canvas.hover{cursor:pointer}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+#cross{position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;pointer-events:none;z-index:3}
+#cross::before,#cross::after{content:"";position:absolute;background:rgba(255,255,255,.85);box-shadow:0 0 3px #000}
+#cross::before{left:8px;top:0;width:2px;height:18px}
+#cross::after{top:8px;left:0;height:2px;width:18px}
+#cross.on::before,#cross.on::after{background:var(--gold)}
+
+#hud{position:absolute;left:0;right:0;top:0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-block:12px;pointer-events:none;flex-wrap:wrap}
+#hud>*{pointer-events:auto}
+.roombox{background:rgba(20,24,49,.82);border:2px solid var(--ink3);border-radius:14px;padding:8px 14px;min-width:0}
+.roombox .rn{font-family:var(--display);font-weight:600;font-size:20px;line-height:1.2}
+.roombox .rs{font-size:13px;color:var(--muted)}
+.keys{display:flex;gap:8px;align-items:center;background:rgba(20,24,49,.82);border:2px solid var(--ink3);border-radius:14px;padding:8px 14px}
+.keys .kl{font-size:13px;color:var(--muted);margin-right:4px}
+.key{width:26px;height:26px;border-radius:7px;border:2px solid var(--ink3);background:var(--ink);transition:all .3s;display:grid;place-items:center;font-size:14px;color:transparent}
+.key.on{background:var(--gold);border-color:var(--gold);color:var(--ink);transform:rotate(-8deg) scale(1.1)}
+.keys.open .key.on{background:var(--jade);border-color:var(--jade)}
+#hint{position:absolute;left:0;right:0;bottom:0;padding-block:14px;text-align:center;color:#d6d7ea;font-size:14px;pointer-events:none;text-shadow:0 1px 4px #000;transition:opacity .6s}
+#tip{position:fixed;z-index:5;pointer-events:none;background:var(--paper);color:var(--ink);font-weight:700;padding:5px 10px;border-radius:8px;font-size:14px;white-space:nowrap}
+#toast{position:absolute;left:50%;top:76px;transform:translateX(-50%);background:var(--paper);color:var(--ink);font-weight:700;padding:10px 18px;border-radius:12px;max-width:calc(100% - 32px);text-align:center;opacity:0;transition:opacity .25s;pointer-events:none;z-index:6}
+#toast.show{opacity:1}
+#fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .45s;z-index:8}
+#fade.on{opacity:1}
+
+.overlay{position:absolute;inset:0;background:rgba(10,12,24,.78);display:flex;align-items:center;justify-content:center;z-index:7;padding-block:16px}
+.card{background:var(--ink2);border:2px solid var(--ink3);border-radius:18px;width:min(640px,100%);max-height:100%;overflow:auto;padding:20px 22px;box-sizing:border-box}
+.card h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,6vw,40px);line-height:1.15;margin:0 0 8px;text-wrap:balance}
+.card p{line-height:1.65;margin:0 0 10px}
+.mut{color:var(--muted)}
+.go{font-family:var(--display);font-weight:600;font-size:20px;background:var(--gold);color:var(--ink);border:0;border-radius:12px;padding:12px 22px;cursor:pointer;margin-top:8px}
+.go:hover{filter:brightness(1.08)}
+.go.alt{background:var(--ink3);color:var(--paper)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--jade);outline-offset:2px}
+.how{display:grid;gap:6px;margin:12px 0;padding:0;list-style:none}
+.how li{background:var(--ink);border-radius:10px;padding:8px 12px;line-height:1.5}
+kbd{font-family:var(--display);font-weight:600;background:var(--ink3);border-radius:6px;padding:1px 7px;margin:0 1px}
+
+.phead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.ptitle{font-family:var(--display);font-weight:700;font-size:26px}
+.psub{color:var(--muted);font-size:13px}
+.x{background:var(--ink3);color:var(--paper);border:0;border-radius:10px;width:40px;height:40px;font-size:24px;cursor:pointer;flex:none}
+.dots{display:flex;gap:6px;margin:12px 0}
+.dots i{flex:1;height:8px;border-radius:4px;background:var(--ink3)}
+.dots i.d{background:var(--jade)}
+.qs{font-family:var(--display);font-weight:600;font-size:clamp(26px,5.5vw,36px);line-height:1.35;margin:14px 0;text-wrap:balance}
+.blank{display:inline-block;min-width:64px;border-bottom:4px solid var(--gold);color:var(--gold);text-align:center}
+.zh{font-size:20px;margin:14px 0 8px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.opt{font-family:var(--display);font-weight:600;font-size:26px;background:var(--ink3);color:var(--paper);border:3px solid transparent;border-radius:14px;padding:14px 8px;cursor:pointer}
+.opt:hover{border-color:var(--gold)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;min-height:54px;padding:8px;border-radius:12px}
+.chips.slot{background:var(--ink);border:2px dashed var(--ink3);margin-bottom:12px}
+.chip{font-family:var(--display);font-weight:600;font-size:24px;background:var(--ink3);color:var(--paper);border:3px solid transparent;border-radius:12px;padding:8px 14px;cursor:pointer}
+.chip:hover{border-color:var(--gold)}
+.chips.slot .chip{background:var(--gold);color:var(--ink)}
+input.ti{font-family:var(--display);font-weight:600;font-size:28px;width:100%;max-width:260px;box-sizing:border-box;background:var(--ink);color:var(--paper);border:3px solid var(--ink3);border-radius:12px;padding:10px 14px}
+.fb{border-radius:12px;padding:12px 14px;margin:12px 0;line-height:1.6}
+.fb.good{background:rgba(63,184,160,.2);border:2px solid var(--jade)}
+.fb.bad{background:rgba(224,87,79,.18);border:2px solid var(--brick)}
+.shake{animation:shake .35s}
+@keyframes shake{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.lesson{background:var(--ink);border-radius:12px;padding:12px 14px;margin:10px 0}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:8px 0}
+.rules div{background:var(--ink3);border-radius:10px;padding:8px 10px;text-align:center}
+.rules b{display:block;font-family:var(--display);font-size:20px}
+.rules i{font-style:normal;font-family:var(--display);font-weight:700;font-size:26px;color:var(--gold)}
+.report{width:100%;box-sizing:border-box;min-height:170px;background:var(--ink);color:var(--paper);border:2px solid var(--ink3);border-radius:12px;padding:12px;font:14px/1.6 var(--body);resize:vertical}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.stat{background:var(--ink);border-radius:12px;padding:8px 14px;min-width:90px}
+.stat b{display:block;font-family:var(--display);font-size:28px}
+.stat span{color:var(--muted);font-size:13px}
+
+#clues{position:absolute;left:0;top:74px;max-width:min(340px,100%);box-sizing:border-box;pointer-events:none}
+#clues .box{pointer-events:auto;background:rgba(20,24,49,.86);border:2px solid var(--ink3);border-radius:14px;padding:8px 12px}
+#clues .ch{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px}
+#clues .ch b{font-family:var(--display);font-size:16px}
+.mini{background:var(--ink3);color:var(--paper);border:0;border-radius:8px;padding:3px 9px;font-size:12px;cursor:pointer}
+.cl{display:flex;gap:8px;padding:4px 0;line-height:1.35;font-size:14px}
+.cl>span{flex:none;width:20px;height:20px;border-radius:50%;background:var(--ink3);display:grid;place-items:center;font-size:12px}
+.cl.d>span{background:var(--jade);color:var(--ink)}
+.cl.d{opacity:.75}
+.cl small{display:block;color:var(--muted);font-size:12px}
+#mute{pointer-events:auto;background:rgba(20,24,49,.82);border:2px solid var(--ink3);border-radius:14px;color:var(--paper);font-size:18px;padding:6px 12px;cursor:pointer}
+.hr{display:flex;gap:8px;align-items:center}
+.npc{display:flex;gap:14px;align-items:flex-start}
+.npc .face{flex:none;width:64px;height:64px;border-radius:50%;background:#c78fd0;display:grid;place-items:center;font-size:36px}
+.npc .say{background:var(--ink);border-radius:14px;padding:12px 14px;line-height:1.6;min-width:0}
+.npc .say .en{font-family:var(--display);font-weight:600;font-size:22px;line-height:1.4}
+.lock{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--ink);border:3px dashed var(--ink3);border-radius:14px;padding:10px 14px;margin:8px 0;cursor:pointer}
+.lock.over{border-color:var(--gold)}
+.lock.open{border:3px solid var(--jade);background:rgba(63,184,160,.16)}
+.lock .ls{font-family:var(--display);font-weight:600;font-size:clamp(20px,4.6vw,28px);line-height:1.3}
+.lock .li{font-size:28px;flex:none}
+.keyrow{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 4px}
+.kchip{font-family:var(--display);font-weight:700;font-size:26px;background:var(--gold);color:var(--ink);border:3px solid transparent;border-radius:12px;padding:8px 18px;cursor:grab}
+.kchip.sel{border-color:#fff;transform:translateY(-3px)}
+.pics{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.pic{font-size:60px;line-height:1;background:var(--ink3);border:3px solid transparent;border-radius:16px;padding:14px 6px;cursor:pointer}
+.pic:hover{border-color:var(--gold)}
+.big{font-size:84px;line-height:1.1;text-align:center;margin:8px 0}
+.cnt{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:2px;font-size:34px;line-height:1.2;text-align:center;background:var(--ink);border-radius:12px;padding:10px;margin:8px 0}
+.chip.letter{font-size:28px;padding:6px 14px;min-width:44px;text-transform:lowercase}
+.say-model{background:var(--ink);border-radius:12px;padding:10px 14px;margin:10px 0;font-family:var(--display);font-weight:600;font-size:24px}
+.say-btns{display:flex;gap:10px;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){.shake{animation:none}.key{transition:none}}
+</style>
+
+<div id="app">
+  <canvas id="gl"></canvas>
+  <div id="cross" hidden></div>
+  <div id="clues" class="gut"><div class="box" id="cluebox"></div></div>
+  <div id="hud" class="gut">
+    <div class="roombox"><div class="rn" id="rn"></div><div class="rs" id="rs"></div></div>
+    <div class="hr"><div class="keys" id="keys"><span class="kl">鑰匙碎片</span><span class="key" id="k0">★</span><span class="key" id="k1">★</span><span class="key" id="k2">★</span></div><button id="mute" aria-label="音效開關">🔊</button></div>
+  </div>
+  <div id="hint" class="gut">點一下畫面鎖定滑鼠　<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走動　照左上角的線索，到可疑的地方按<b>右鍵</b>（或 <kbd>E</kbd>）搜索　<kbd>Z</kbd> 切換中文　<kbd>Esc</kbd> 放開滑鼠</div>
+  <div id="toast"></div>
+  <div id="fade"></div>
+  <div id="panel" class="overlay gut" hidden><div class="card" id="pcard"></div></div>
+  <div id="intro" class="overlay gut"><div class="card">
+    <h1>家族大宅密室</h1>
+    <p>你被鎖在奶奶的大宅裡。每個房間藏著 3 塊鑰匙碎片，收集齊全才能打開出口門，一共有 4 個房間。</p>
+    <ul class="how">
+      <li>按「開始冒險」後滑鼠會被鎖定，移動滑鼠就是轉頭，<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走動</li>
+      <li>奶奶在每個房間藏了 3 把鑰匙，左上角有英文線索，猜猜是哪件家具</li>
+      <li>走近可疑的地方，準心對準後按<b>滑鼠右鍵</b>（或 <kbd>E</kbd>）搜索，有的是空的喔</li>
+      <li>找對了就會有小遊戲：把鑰匙插進鎖、數數看、拼單字、開口說英文</li>
+    </ul>
+    <button class="go" id="start">開始冒險</button>
+  </div></div>
+</div>
+<div id="tip" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ---------- question data ---------- */
+var C=function(s,opts,ans,why){return {t:'c',s:s,opts:opts,ans:ans,why:why,miss:0};};
+var O=function(zh,ans,why){return {t:'o',zh:zh,ans:ans,why:why,miss:0};};
+var T=function(s,ans,why){return {t:'t',s:s,ans:ans,why:why,miss:0};};
+var LK=function(items){return {t:'k',items:items,keys:['am','is','are'],miss:0};};
+var PIC=function(s,opts,ans,why){return {t:'p',s:s,opts:opts,ans:ans,why:why,miss:0};};
+var CNT=function(e,n,s,opts,ans,why){return {t:'n',e:e,n:n,s:s,opts:opts,ans:ans,why:why,miss:0};};
+var SP=function(e,zh,ans){return {t:'s',e:e,zh:zh,ans:ans,why:'一個字母一個字母慢慢拼。',miss:0};};
+var SAY=function(zh,model){return {t:'y',zh:zh,model:model,ans:model,miss:0};};
+var BE=['am','is','are'];
+var PR=['He','She','It'];
+var PL=['We','You','They'];
+var RULE={am:'I 配 am。',is:'He / She / It 和一個人、一個東西配 is。',are:'You / We / They 和兩個以上配 are。'};
+var FAM=[{e:'👦',k:'brother'},{e:'👧',k:'sister'},{e:'👨',k:'father'},{e:'👵',k:'grandma'}];
+var BODY=[{e:'👀',k:'eyes'},{e:'👃',k:'nose'},{e:'👂',k:'ears'},{e:'👄',k:'mouth'}];
+var PETS=[{e:'🐱',k:'cat'},{e:'🐶',k:'dog'},{e:'🐰',k:'rabbit'},{e:'🐟',k:'fish'}];
+
+var LESSON='<div class="lesson"><p style="margin:0">先記住 be 動詞怎麼配：</p><div class="rules">'+
+ '<div><b>I</b><i>am</i></div><div><b>You</b><i>are</i></div>'+
+ '<div><b>He / She / It</b><i>is</i></div><div><b>We / You / They</b><i>are</i></div></div>'+
+ '<p class="mut" style="margin:0">一個人或一個東西用 is，兩個以上用 are。</p></div>';
+
+function makeRooms(){return [
+ {name:'客廳',sub:'I am ・ You are',wall:0xe8d3a6,floor:'wood',floorTint:0xd9b48a,rug:0xb5523b,
+  intro:{en:'Hello! I am Grandma. Three keys are hiding in this room.',zh:'你好！我是奶奶。這個房間藏了 3 把鑰匙，看左上角的線索，猜猜是哪裡，走過去按右鍵搜搜看。'},objs:[
+  {id:'poster',label:'規則海報',kind:'poster',x:0,z:-4.93,ry:0,y:2.0,mh:3.3,lesson:LESSON,keepLesson:true,
+   clue:'It is big. It has rules.',clueZh:'它很大，上面有規則。',qs:[
+    C('We ___ friends.',BE,'are','We 後面接 are。'),
+    SAY('口說任務：說「我是＿＿（你的名字），我九歲。」','I am ____. I am nine.')]},
+  {id:'frame',label:'全家福相框',kind:'frame',x:4.93,z:0,ry:-Math.PI/2,y:1.9,mh:3.2,
+   clue:'They are on the wall. They are my family.',clueZh:'它們掛在牆上，是我的家人。',qs:[
+    PIC('This is my grandmother. She is old.',FAM,'grandma','grandmother 就是 grandma，奶奶。'),
+    CNT('🐟',13,'There are ___ fish.',['thirteen','thirty','fourteen'],'thirteen','thirteen 是 13，thirty 是 30。')]},
+  {id:'sofa',label:'舊沙發',kind:'sofa',x:0,z:4.2,ry:Math.PI,y:0,mh:2.0,
+   clue:'It is red. You sit on it.',clueZh:'它是紅色的，你坐在上面。',qs:[
+    LK([{s:'I ___ a student.',a:'am'},{s:'You ___ my friend.',a:'are'},{s:'She ___ my sister.',a:'is'}]),
+    SP('👩','媽媽','mother')]},
+  {id:'plant1',label:'盆栽',kind:'plant',x:-3.8,z:-3.6,ry:0,y:0,decoy:true,msg:'It is a plant. 這裡沒有鑰匙。'},
+  {id:'lamp1',label:'立燈',kind:'lamp',x:3.8,z:3.6,ry:0,y:0,decoy:true,msg:'It is a lamp. 這裡沒有鑰匙。'},
+  {id:'gran',label:'奶奶',kind:'grandma',x:-2.9,z:2.6,y:0,npc:true}
+ ]},
+ {name:'廚房',sub:'He is ・ She is ・ It is',wall:0xcfe6da,floor:'tile',floorTint:0xffffff,rug:0xe0b45a,
+  intro:{en:'This is the kitchen. It is big and warm.',zh:'這裡是廚房，又大又溫暖。鑰匙又藏起來囉，看線索找找看。'},objs:[
+  {id:'fridge',label:'大冰箱',kind:'fridge',x:0,z:-4.35,ry:0,y:0,mh:3.0,
+   clue:'It is white and cold. Milk is in it.',clueZh:'它是白色又冰冰的，牛奶放在裡面。',qs:[
+    LK([{s:'He ___ my father.',a:'is'},{s:'They ___ in the kitchen.',a:'are'},{s:'I ___ hungry.',a:'am'}]),
+    CNT('🍎',15,'There are ___ apples.',['fifteen','fifty','fourteen'],'fifteen','fifteen 是 15，fifty 是 50。')]},
+  {id:'table',label:'餐桌',kind:'table',x:4.0,z:0,ry:-Math.PI/2,y:0,mh:1.9,
+   clue:'We eat here. It has four legs.',clueZh:'我們在這裡吃飯，它有四隻腳。',qs:[
+    PIC('He is my brother. Who is he?',FAM,'brother','brother 是哥哥或弟弟，男生。'),
+    C('The dog is small. ___ is small.',PR,'It','動物或東西用 It。')]},
+  {id:'oven',label:'烤箱',kind:'oven',x:0,z:4.35,ry:Math.PI,y:0,mh:1.9,
+   clue:'It is hot. We bake bread in it.',clueZh:'它很燙，我們用它烤麵包。',qs:[
+    O('她是我的媽媽。','She is my mother','She 後面接 is。'),
+    SP('🍞','麵包','bread')]},
+  {id:'plant2',label:'盆栽',kind:'plant',x:-3.8,z:-3.6,ry:0,y:0,decoy:true,msg:'It is a plant. 這裡沒有鑰匙。'},
+  {id:'crate2',label:'木箱',kind:'crate',x:3.8,z:3.6,ry:0.3,y:0,decoy:true,msg:'It is a box. 裡面只有蘋果，沒有鑰匙。'},
+  {id:'gran',label:'奶奶',kind:'grandma',x:-2.9,z:2.6,y:0,npc:true}
+ ]},
+ {name:'臥室',sub:'We are ・ You are ・ They are',wall:0xd5cfee,floor:'carpet',floorTint:0x9a8aae,rug:0x6a8fd0,
+  intro:{en:'This is the bedroom. It is quiet. Shh!',zh:'這裡是臥室，很安靜。輕輕走，找出藏鑰匙的地方。'},objs:[
+  {id:'shelf',label:'書櫃',kind:'shelf',x:0,z:-4.6,ry:0,y:0,mh:3.2,
+   clue:'They are on it. They are books.',clueZh:'它們放在上面，它們是書。',qs:[
+    LK([{s:'I ___ nine years old.',a:'am'},{s:'We ___ friends.',a:'are'},{s:'It ___ a book.',a:'is'}]),
+    CNT('📚',17,'There are ___ books.',['seventeen','seventy','sixteen'],'seventeen','seventeen 是 17，seventy 是 70。')]},
+  {id:'bed',label:'單人床',kind:'bed',x:3.7,z:0,ry:-Math.PI/2,y:0,mh:2.0,
+   clue:'We sleep on it. It is blue.',clueZh:'我們睡在上面，它是藍色的。',qs:[
+    C('My mom and dad are in the room. ___ are in the room.',PL,'They','爸爸和媽媽是別人，用 They。'),
+    PIC('They are my ears.',BODY,'ears','ears 是耳朵，有兩個，所以是 They are。')]},
+  {id:'wardrobe',label:'大衣櫃',kind:'wardrobe',x:0,z:4.5,ry:Math.PI,y:0,mh:3.3,
+   clue:'My clothes are in it. It is brown.',clueZh:'我的衣服放在裡面，它是咖啡色的。',qs:[
+    O('他們是我的爸媽。','They are my parents','They 後面接 are。'),
+    SAY('口說任務：指著兩個朋友說「我們是朋友。」','We are friends.')]},
+  {id:'lamp3',label:'立燈',kind:'lamp',x:-3.8,z:-3.6,ry:0,y:0,decoy:true,msg:'It is a lamp. 這裡沒有鑰匙。'},
+  {id:'plant3',label:'盆栽',kind:'plant',x:3.8,z:3.6,ry:0,y:0,decoy:true,msg:'It is a plant. 這裡沒有鑰匙。'},
+  {id:'gran',label:'奶奶',kind:'grandma',x:-2.9,z:2.6,y:0,npc:true}
+ ]},
+ {name:'閣樓',sub:'最後一關：全部混在一起',wall:0x8a6a52,floor:'darkwood',floorTint:0x8a6a50,rug:0x2f5f58,
+  intro:{en:'This is the attic. It is old and dusty. Find the last keys!',zh:'這裡是閣樓，又舊又有灰塵。最後 3 把鑰匙，加油！'},objs:[
+  {id:'album',label:'舊相簿',kind:'album',x:0,z:-4.2,ry:0,y:0,mh:2.0,
+   clue:'It is a book. It has many photos.',clueZh:'它是一本書，裡面有很多照片。',qs:[
+    LK([{s:'My mother ___ a teacher.',a:'is'},{s:'My parents ___ at home.',a:'are'},{s:'I ___ nine years old.',a:'am'}]),
+    SP('👵','奶奶','grandma')]},
+  {id:'clock',label:'老爺鐘',kind:'clock',x:4.4,z:0,ry:-Math.PI/2,y:0,mh:3.3,
+   clue:'It is old. Tick, tock, tick, tock!',clueZh:'它很老，滴答、滴答、滴答。',qs:[
+    O('我的爸爸媽媽很高興。','My parents are happy','parents 是兩個人，用 are。'),
+    CNT('⭐',19,'There are ___ stars.',['nineteen','ninety','eighteen'],'nineteen','nineteen 是 19，ninety 是 90。')]},
+  {id:'chest',label:'寶箱',kind:'chest',x:0,z:4.1,ry:Math.PI,y:0,mh:1.9,
+   clue:'It is big. It is brown and gold.',clueZh:'它很大，是咖啡色加金色。',qs:[
+    LK([{s:'It ___ a big box.',a:'is'},{s:'They ___ happy.',a:'are'},{s:'I ___ the boss.',a:'am'}]),
+    PIC('It is a cat. Which one?',PETS,'cat','cat 是貓。'),
+    SAY('口說任務：說「我們是一家人。」','We are a family.'),
+    SP('👨','爸爸','father'),
+    T('She ___ my mother.','is','She 配 is。')]},
+  {id:'crate4',label:'木箱',kind:'crate',x:-3.8,z:-3.6,ry:0.2,y:0,decoy:true,msg:'It is a box. 只有灰塵，沒有鑰匙。'},
+  {id:'lamp4',label:'立燈',kind:'lamp',x:3.8,z:3.6,ry:0,y:0,decoy:true,msg:'It is a lamp. 這裡沒有鑰匙。'},
+  {id:'gran',label:'奶奶',kind:'grandma',x:-2.9,z:2.6,y:0,npc:true}
+ ]}
+];}
+
+var KIND_SIZE={sofa:[2.7,1.1],fridge:[1.3,1.05],table:[2.3,1.4],oven:[1.4,1.0],shelf:[2.2,0.6],bed:[1.8,2.5],wardrobe:[2.0,0.9],album:[1.5,0.9],clock:[1.0,0.6],chest:[1.5,1.0],plant:[0.8,0.8],crate:[1.1,1.1],lamp:[0.5,0.5],grandma:[0.8,0.8]};
+
+/* ---------- state ---------- */
+var ROOMS=makeRooms();
+var roomIdx=0, keys=0, modal=false, curObj=null, started=false, t0=0;
+var stat={correct:0,wrong:0,perRoom:[0,0,0,0],missed:[]};
+var $=function(id){return document.getElementById(id);};
+
+/* ---------- three.js setup ---------- */
+var app=$('app'), canvas=$('gl');
+var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+var scene=new THREE.Scene();
+var camera=new THREE.PerspectiveCamera(72,1,0.05,60);
+camera.rotation.order='YXZ';
+var px=0,pz=0,yaw=0,pitch=0,walkT=0;
+var pickables=[], objs=[], doorObj=null, colliders=[], t=0, hovered=null, locked=false;
+var lastMouse=null;
+
+function resize(){
+  var w=app.clientWidth,h=app.clientHeight;
+  renderer.setSize(w,h,false);
+  camera.aspect=w/Math.max(h,1);
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',resize);
+
+/* ---------- procedural materials (no external images) ---------- */
+function cvs(w,h){var c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+function rnd(a,b){return a+Math.random()*(b-a);}
+function repTex(c,rx,ry){
+  var tx=new THREE.CanvasTexture(c);
+  tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.repeat.set(rx,ry);
+  tx.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  return tx;
+}
+function grainCanvas(w,h,planks,dark){
+  var c=cvs(w,h),x=c.getContext('2d'),ph=h/planks;
+  for(var p=0;p<planks;p++){
+    var v=Math.round(rnd(190,238));
+    x.fillStyle='rgb('+v+','+v+','+v+')';x.fillRect(0,p*ph,w,ph);
+    for(var i=0;i<34;i++){
+      var y=p*ph+rnd(3,ph-3),g=Math.round(rnd(140,215));
+      x.strokeStyle='rgba('+g+','+g+','+g+',.38)';x.lineWidth=rnd(0.6,2);x.beginPath();x.moveTo(0,y);
+      var ph0=rnd(0,6),amp=rnd(1,3.5);
+      for(var xx=0;xx<=w;xx+=24){x.lineTo(xx,y+Math.sin(xx*0.018+ph0)*amp);}
+      x.stroke();
+    }
+    for(var k=0;k<3;k++){ // knots
+      if(Math.random()<0.35){var kx=rnd(40,w-40),ky=p*ph+ph/2;x.strokeStyle='rgba(90,70,50,.35)';x.lineWidth=1.2;
+        for(var r=2;r<9;r+=2.5){x.beginPath();x.ellipse(kx,ky,r*2.4,r,0,0,7);x.stroke();}}
+    }
+    x.fillStyle='rgba(30,22,16,.6)';x.fillRect(0,p*ph,w,2.5);
+    x.fillRect(rnd(0.15,0.85)*w,p*ph,2.5,ph);
+  }
+  return c;
+}
+function tileCanvas(){
+  var c=cvs(512,512),x=c.getContext('2d'),n=8,s=512/n;
+  for(var i=0;i<n;i++)for(var j=0;j<n;j++){
+    var v=(i+j)%2?236:222;v+=Math.round(rnd(-6,6));
+    x.fillStyle='rgb('+v+','+v+','+(v+4)+')';x.fillRect(i*s,j*s,s,s);
+    var gr=x.createLinearGradient(i*s,j*s,i*s+s,j*s+s);gr.addColorStop(0,'rgba(255,255,255,.25)');gr.addColorStop(1,'rgba(0,0,0,.06)');
+    x.fillStyle=gr;x.fillRect(i*s,j*s,s,s);
+  }
+  x.strokeStyle='rgba(110,105,98,.9)';x.lineWidth=4;
+  for(var k=0;k<=n;k++){x.beginPath();x.moveTo(k*s,0);x.lineTo(k*s,512);x.stroke();x.beginPath();x.moveTo(0,k*s);x.lineTo(512,k*s);x.stroke();}
+  return c;
+}
+function noiseCanvas(size,base,spread,dots,len){
+  var c=cvs(size,size),x=c.getContext('2d');
+  x.fillStyle='rgb('+base+','+base+','+base+')';x.fillRect(0,0,size,size);
+  for(var i=0;i<dots;i++){
+    var v=Math.round(base+rnd(-spread,spread));
+    x.fillStyle='rgba('+v+','+v+','+v+','+rnd(0.15,0.5)+')';
+    x.fillRect(rnd(0,size),rnd(0,size),rnd(1,len),rnd(1,len));
+  }
+  return c;
+}
+var woodGrain=null;
+function woodMap(){
+  if(!woodGrain){woodGrain=repTex(grainCanvas(256,256,4),1,1);}
+  return woodGrain;
+}
+var WOODS=[0x6b4a2f,0x9a6a3f,0x7a4e2d,0x8b5e3c,0x6a4326,0x6b4423,0x5a3a22,0x8a5a2b,0x5a3a2a];
+
+function mat(c,o){
+  var opts=Object.assign({color:c,roughness:0.78,metalness:0.04},o||{});
+  if(WOODS.indexOf(c)>=0&&!opts.map){opts.map=woodMap();opts.roughness=0.6;}
+  return new THREE.MeshStandardMaterial(opts);
+}
+function B(w,h,d){return new THREE.BoxGeometry(w,h,d);}
+function add(g,geo,m,x,y,z){
+  var me=new THREE.Mesh(geo,m);me.position.set(x,y,z);
+  me.castShadow=true;me.receiveShadow=true;g.add(me);
+  if(!g.userData.mats)g.userData.mats=[];
+  if(g.userData.mats.indexOf(m)<0)g.userData.mats.push(m);
+  return me;
+}
+function texMat(w,h,draw){
+  var c=cvs(w,h);draw(c.getContext('2d'),w,h);
+  return new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(c),roughness:0.9});
+}
+var FONT="600 36px Fredoka,'Noto Sans TC',sans-serif";
+
+/* ---------- furniture ---------- */
+var BUILD={
+ poster:function(g){
+  add(g,B(2.7,1.8,0.08),mat(0x6b4a2f),0,0,0);
+  var m=texMat(540,360,function(x,w,h){
+    x.fillStyle='#fff8e7';x.fillRect(0,0,w,h);
+    x.fillStyle='#3a2a20';x.font="700 38px Fredoka,sans-serif";x.textAlign='center';
+    x.fillText('be verbs',w/2,52);
+    var rows=[['I','am'],['You','are'],['He / She / It','is'],['We / You / They','are']];
+    x.font=FONT;
+    rows.forEach(function(r,i){
+      x.fillStyle='#3a2a20';x.textAlign='left';x.fillText(r[0],40,118+i*62);
+      x.fillStyle='#c4572f';x.textAlign='right';x.fillText(r[1],w-40,118+i*62);
+    });
+  });
+  add(g,new THREE.PlaneGeometry(2.5,1.66),m,0,0,0.05);
+ },
+ frame:function(g){
+  var cols=['I','You','We'],bg=['#e9c46a','#8ecae6','#b8e0a0'];
+  for(var i=0;i<3;i++){
+    var x=(i-1)*1.1;
+    add(g,B(0.95,1.2,0.07),mat(0x5a3a22),x,0,0);
+    (function(i){
+      var m=texMat(190,240,function(c,w,h){
+        c.fillStyle=bg[i];c.fillRect(0,0,w,h);
+        c.fillStyle='#3a2a20';c.beginPath();c.arc(w/2,92,38,0,7);c.fill();
+        c.fillRect(w/2-52,140,104,90);
+        c.fillStyle='#fff8e7';c.font="700 40px Fredoka,sans-serif";c.textAlign='center';c.fillText(cols[i],w/2,208);
+      });
+      add(g,new THREE.PlaneGeometry(0.8,1.05),m,x,0,0.05);
+    })(i);
+  }
+ },
+ sofa:function(g){
+  var fab=mat(0xb5523b,{roughness:0.95,bumpMap:null});
+  add(g,B(2.6,0.5,1.0),fab,0,0.45,0);
+  add(g,B(2.6,0.9,0.28),mat(0xa24630,{roughness:0.95}),0,0.95,-0.36);
+  add(g,B(0.3,0.75,1.0),mat(0xa24630,{roughness:0.95}),-1.15,0.62,0);
+  add(g,B(0.3,0.75,1.0),mat(0xa24630,{roughness:0.95}),1.15,0.62,0);
+  add(g,B(1.05,0.22,0.8),mat(0xc9644b,{roughness:0.95}),-0.5,0.8,0.05);
+  add(g,B(1.05,0.22,0.8),mat(0xc9644b,{roughness:0.95}),0.55,0.8,0.05);
+  [[-1.1,-0.4],[1.1,-0.4],[-1.1,0.4],[1.1,0.4]].forEach(function(p){add(g,B(0.1,0.18,0.1),mat(0x3a2a20),p[0],0.09,p[1]);});
+ },
+ fridge:function(g){
+  add(g,B(1.2,2.3,0.95),mat(0xe8eef2,{roughness:0.35,metalness:0.2}),0,1.15,0);
+  add(g,B(1.2,0.04,0.02),mat(0x9aa4ae),0,1.6,0.48);
+  add(g,B(0.06,0.7,0.06),mat(0x8a949e,{metalness:0.7,roughness:0.3}),0.45,1.9,0.52);
+  add(g,B(0.06,0.5,0.06),mat(0x8a949e,{metalness:0.7,roughness:0.3}),0.45,1.0,0.52);
+ },
+ table:function(g){
+  add(g,B(2.2,0.12,1.3),mat(0x9a6a3f),0,0.8,0);
+  [[-1,-0.5],[1,-0.5],[-1,0.5],[1,0.5]].forEach(function(p){add(g,B(0.12,0.8,0.12),mat(0x7a4e2d),p[0],0.4,p[1]);});
+  var pl=mat(0xf4efe6,{roughness:0.3});
+  add(g,new THREE.CylinderGeometry(0.24,0.24,0.03,24),pl,-0.6,0.88,0);
+  add(g,new THREE.CylinderGeometry(0.24,0.24,0.03,24),pl,0.6,0.88,0);
+  add(g,new THREE.CylinderGeometry(0.1,0.08,0.18,16),mat(0x3fb8a0,{roughness:0.3}),0,0.95,0.2);
+  [[-0.9,1],[0.9,1],[-0.9,-1],[0.9,-1]].forEach(function(p){
+    add(g,B(0.5,0.08,0.5),mat(0x7a4e2d),p[0],0.5,p[1]*0.95);
+    add(g,B(0.5,0.55,0.07),mat(0x7a4e2d),p[0],0.8,p[1]*0.95+(p[1]>0?0.22:-0.22));
+  });
+ },
+ oven:function(g){
+  add(g,B(1.3,1.0,0.9),mat(0x3a3d48,{roughness:0.4,metalness:0.3}),0,0.5,0);
+  var w=mat(0xffb347,{emissive:0xff8a1f,emissiveIntensity:0.7});w.userData.keep=true;
+  add(g,B(0.8,0.5,0.02),w,0,0.5,0.46);
+  [-0.4,0,0.4].forEach(function(x){add(g,new THREE.CylinderGeometry(0.05,0.05,0.05,12),mat(0xc9ced6,{metalness:0.6}),x,0.9,0.46).rotation.x=Math.PI/2;});
+  add(g,B(1.3,0.06,0.9),mat(0x2a2c35,{metalness:0.3,roughness:0.4}),0,1.03,0);
+ },
+ shelf:function(g){
+  add(g,B(2.1,2.5,0.5),mat(0x7a4e2d),0,1.25,0);
+  add(g,B(1.9,2.3,0.05),mat(0x2a1c14),0,1.25,0.2);
+  var cs=[0xc4572f,0x3a6ea5,0xe9c46a,0x5a9a6a,0x8a4f9a,0xd9534f];
+  for(var r=0;r<3;r++){
+    add(g,B(2.0,0.06,0.5),mat(0x8b5e3c),0,0.35+r*0.78,0.02);
+    for(var i=0;i<8;i++){
+      add(g,B(0.15,0.5+((i*7+r)%3)*0.06,0.3),mat(cs[(i+r*2)%cs.length],{roughness:0.9}),-0.8+i*0.23,0.66+r*0.78-0.05,0.08);
+    }
+  }
+ },
+ bed:function(g){
+  add(g,B(1.7,0.4,2.4),mat(0x7a4e2d),0,0.3,0);
+  add(g,B(1.7,0.95,0.1),mat(0x6a4326),0,0.8,-1.2);
+  add(g,B(1.6,0.3,2.3),mat(0xdfe7f5,{roughness:0.95}),0,0.65,0);
+  add(g,B(1.0,0.2,0.5),mat(0xffffff,{roughness:0.95}),0,0.9,-0.8);
+  add(g,B(1.62,0.12,1.4),mat(0x6a8fd0,{roughness:0.95}),0,0.82,0.45);
+ },
+ wardrobe:function(g){
+  add(g,B(1.9,2.5,0.8),mat(0x8b5e3c),0,1.25,0);
+  add(g,B(0.03,2.3,0.02),mat(0x4a2e1a),0,1.25,0.41);
+  add(g,new THREE.SphereGeometry(0.06,12,12),mat(0xf2b84b,{metalness:0.7,roughness:0.3}),-0.12,1.2,0.43);
+  add(g,new THREE.SphereGeometry(0.06,12,12),mat(0xf2b84b,{metalness:0.7,roughness:0.3}),0.12,1.2,0.43);
+  add(g,B(1.95,0.1,0.85),mat(0x6a4326),0,2.55,0);
+ },
+ album:function(g){
+  add(g,B(1.4,0.1,0.8),mat(0x6b4423),0,0.9,0);
+  [[-0.6,-0.32],[0.6,-0.32],[-0.6,0.32],[0.6,0.32]].forEach(function(p){add(g,B(0.1,0.9,0.1),mat(0x5a3a22),p[0],0.45,p[1]);});
+  var a=add(g,B(0.9,0.14,0.65),mat(0x9a3b3b,{roughness:0.9}),0,1.02,0);a.rotation.y=0.2;
+  add(g,B(0.8,0.04,0.55),mat(0xf3e6c8,{roughness:0.95}),0.01,1.1,0).rotation.y=0.2;
+ },
+ clock:function(g){
+  add(g,B(0.95,2.7,0.5),mat(0x7a4e2d),0,1.35,0);
+  add(g,B(0.7,0.7,0.04),mat(0x2a1c14),0,0.8,0.26);
+  var f=add(g,new THREE.CylinderGeometry(0.32,0.32,0.06,32),mat(0xfaf3df,{roughness:0.5}),0,2.05,0.27);f.rotation.x=Math.PI/2;
+  add(g,B(0.03,0.22,0.02),mat(0x222222),0,2.1,0.32);
+  add(g,B(0.16,0.03,0.02),mat(0x222222),0.06,2.05,0.32);
+  add(g,B(0.05,0.55,0.03),mat(0xf2b84b,{metalness:0.7,roughness:0.3}),0,0.8,0.29);
+  add(g,B(1.05,0.18,0.6),mat(0x6a4326),0,2.78,0);
+ },
+ chest:function(g){
+  add(g,B(1.4,0.7,0.9),mat(0x6b4423),0,0.35,0);
+  add(g,B(1.44,0.25,0.94),mat(0x8a5a2b),0,0.82,0);
+  add(g,B(0.1,0.95,0.96),mat(0xf2b84b,{metalness:0.6,roughness:0.35}),-0.45,0.5,0);
+  add(g,B(0.1,0.95,0.96),mat(0xf2b84b,{metalness:0.6,roughness:0.35}),0.45,0.5,0);
+  add(g,B(0.22,0.28,0.06),mat(0xf2b84b,{metalness:0.6,roughness:0.35}),0,0.72,0.48);
+ },
+ door:function(g){
+  add(g,B(1.85,2.95,0.12),mat(0x2a1c14),0,1.45,-0.07);
+  add(g,B(1.5,2.7,0.15),mat(0x5a3a2a),0,1.35,0);
+  add(g,B(1.1,1.0,0.04),mat(0x4a2e1a),0,1.9,0.09);
+  add(g,B(1.1,1.0,0.04),mat(0x4a2e1a),0,0.65,0.09);
+  add(g,new THREE.SphereGeometry(0.07,12,12),mat(0xf2b84b,{metalness:0.7,roughness:0.3}),0.55,1.3,0.12);
+  var s=texMat(256,86,function(c,w,h){
+    c.fillStyle='#1b1f33';c.fillRect(0,0,w,h);c.fillStyle='#f2b84b';c.font="700 52px Fredoka,sans-serif";c.textAlign='center';c.fillText('EXIT',w/2,62);
+  });
+  var sm=add(g,new THREE.PlaneGeometry(0.9,0.3),s,0,3.2,0.0);
+  sm.material.userData.keep=true;
+ }
+};
+
+BUILD.plant=function(g){
+  add(g,new THREE.CylinderGeometry(0.28,0.2,0.4,16),mat(0xb5523b),0,0.2,0);
+  add(g,B(0.05,0.7,0.05),mat(0x5a3a22),0,0.7,0);
+  var gm=[0x3f8a4f,0x4fa15c,0x2f7440];
+  for(var i=0;i<7;i++){var a=i/7*Math.PI*2;add(g,new THREE.SphereGeometry(0.2,10,10),mat(gm[i%3],{roughness:0.9}),Math.cos(a)*0.25,0.75+(i%3)*0.18,Math.sin(a)*0.25);}
+  add(g,new THREE.SphereGeometry(0.26,10,10),mat(0x4fa15c,{roughness:0.9}),0,1.25,0);
+};
+BUILD.crate=function(g){
+  add(g,B(1,0.8,1),mat(0x9a6a3f),0,0.4,0);
+  add(g,B(1.04,0.1,1.04),mat(0x7a4e2d),0,0.08,0);
+  add(g,B(1.04,0.1,1.04),mat(0x7a4e2d),0,0.72,0);
+  [[-0.46,-0.46],[0.46,-0.46],[-0.46,0.46],[0.46,0.46]].forEach(function(p){add(g,B(0.1,0.82,0.1),mat(0x6a4326),p[0],0.41,p[1]);});
+  add(g,new THREE.SphereGeometry(0.14,12,12),mat(0xd9534f,{roughness:0.5}),0.1,0.9,0.05);
+};
+BUILD.lamp=function(g){
+  add(g,new THREE.CylinderGeometry(0.25,0.28,0.06,20),mat(0x2a2c35,{metalness:0.4}),0,0.03,0);
+  add(g,new THREE.CylinderGeometry(0.025,0.025,1.5,8),mat(0x2a2c35,{metalness:0.4}),0,0.8,0);
+  var sh=mat(0xf2e2b8,{emissive:0xffd28a,emissiveIntensity:0.5,side:THREE.DoubleSide});sh.userData.keep=true;
+  add(g,new THREE.CylinderGeometry(0.2,0.34,0.4,24,1,true),sh,0,1.7,0);
+};
+BUILD.grandma=function(g){
+  var dress=mat(0x8a4f9a,{roughness:0.95}),skin=mat(0xf2c9a0,{roughness:0.8}),hair=mat(0xe6e6e6,{roughness:1});
+  add(g,new THREE.CylinderGeometry(0.2,0.42,1.0,20),dress,0,0.55,0);
+  add(g,new THREE.CylinderGeometry(0.2,0.22,0.5,16),mat(0xb06fc0,{roughness:0.95}),0,1.3,0);
+  add(g,new THREE.SphereGeometry(0.2,20,20),skin,0,1.72,0);
+  var hr=add(g,new THREE.SphereGeometry(0.215,20,20),hair,0,1.78,-0.03);hr.scale.set(1,0.8,1);
+  add(g,new THREE.SphereGeometry(0.09,12,12),hair,0,2.0,-0.1);
+  [-1,1].forEach(function(s){
+    add(g,new THREE.SphereGeometry(0.025,8,8),mat(0x222222),s*0.07,1.74,0.18);
+    add(g,new THREE.TorusGeometry(0.05,0.008,6,16),mat(0x444444),s*0.07,1.74,0.19);
+    var arm=add(g,B(0.08,0.5,0.08),dress,s*0.28,1.2,0.06);arm.rotation.z=-s*0.25;
+    add(g,new THREE.SphereGeometry(0.05,8,8),skin,s*0.34,0.95,0.06);
+  });
+  add(g,B(0.34,0.5,0.03),mat(0xf4efe6),0,0.95,0.3);
+};
+
+var gemGeo=new THREE.OctahedronGeometry(0.17);
+function makeInteractive(o){
+  var g=new THREE.Group();
+  g.userData.mats=[];
+  BUILD[o.kind](g);
+  g.position.set(o.x,o.y||0,o.z);
+  g.rotation.y=o.ry||0;
+  var gem=new THREE.Mesh(gemGeo,new THREE.MeshStandardMaterial({color:0x3fb8a0,emissive:0x3fb8a0,emissiveIntensity:0.8,roughness:0.3}));
+  gem.position.set(0,(o.mh||2)-(o.y||0)+0.2,0.25);
+  gem.visible=false;g.add(gem);
+  o.group=g;o.gem=gem;o.baseY=gem.position.y;
+  g.traverse(function(m){if(m.isMesh){m.userData.owner=o;pickables.push(m);}});
+  o.mats=g.userData.mats.filter(function(m){return !m.userData.keep;});
+  scene.add(g);
+}
+
+/* ---------- room dressing: floor, walls, windows, pictures ---------- */
+function floorMaterial(R){
+  var c,rep,rough=0.8,bump=null;
+  if(R.floor==='tile'){c=tileCanvas();rep=[2.5,2.5];rough=0.25;}
+  else if(R.floor==='carpet'){c=noiseCanvas(256,200,70,5000,3);rep=[5,5];rough=1;}
+  else{c=grainCanvas(1024,1024,18);rep=[1,1];rough=R.floor==='darkwood'?0.7:0.5;}
+  var map=repTex(c,rep[0],rep[1]);
+  var m=new THREE.MeshStandardMaterial({color:R.floorTint,map:map,roughness:rough,metalness:0.02});
+  if(R.floor!=='tile'){m.bumpMap=map;m.bumpScale=R.floor==='carpet'?1.4:0.6;}
+  return m;
+}
+function sky(){
+  var c=cvs(256,300),x=c.getContext('2d');
+  var g=x.createLinearGradient(0,0,0,300);g.addColorStop(0,'#16224d');g.addColorStop(1,'#3c3f78');
+  x.fillStyle=g;x.fillRect(0,0,256,300);
+  for(var i=0;i<45;i++){x.fillStyle='rgba(255,255,240,'+rnd(0.3,0.9)+')';x.fillRect(rnd(0,256),rnd(0,200),rnd(1,2.4),rnd(1,2.4));}
+  x.fillStyle='#fff6d0';x.beginPath();x.arc(185,70,20,0,7);x.fill();
+  x.fillStyle='rgba(255,246,208,.18)';x.beginPath();x.arc(185,70,38,0,7);x.fill();
+  x.fillStyle='#10142b';x.fillRect(0,250,256,50);
+  for(var k=0;k<9;k++){x.fillRect(k*30,rnd(225,248),rnd(16,26),70);}
+  return new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c)});
+}
+function addWindow(x,z,ry,curtain,skyMat){
+  var g=new THREE.Group();
+  var white=mat(0xf2efe8,{roughness:0.5});
+  add(g,B(1.8,0.1,0.14),white,0,0.95,0);add(g,B(1.8,0.1,0.14),white,0,-0.95,0);
+  add(g,B(0.1,2.0,0.14),white,-0.85,0,0);add(g,B(0.1,2.0,0.14),white,0.85,0,0);
+  add(g,B(0.05,1.8,0.1),white,0,0,0);add(g,B(1.6,0.05,0.1),white,0,0,0);
+  var gl=new THREE.Mesh(new THREE.PlaneGeometry(1.7,1.9),skyMat);gl.position.z=-0.03;g.add(gl);
+  add(g,B(2.1,0.08,0.34),white,0,-1.02,0.1);
+  var cm=mat(curtain,{roughness:1});
+  [-1,1].forEach(function(s){for(var i=0;i<5;i++){add(g,B(0.12,2.5,0.07+(i%2)*0.05),cm,s*(1.0+i*0.11),0.05,0.14+(i%2)*0.02);}});
+  add(g,B(2.8,0.04,0.04),mat(0x333333,{metalness:0.5}),0,1.28,0.12);
+  g.position.set(x,2.0,z);g.rotation.y=ry;scene.add(g);
+}
+function addPicture(x,z,ry,hue){
+  var g=new THREE.Group();
+  add(g,B(1.1,0.85,0.07),mat(0x5a3a22),0,0,0);
+  var m=texMat(220,170,function(c,w,h){
+    var gr=c.createLinearGradient(0,0,w,h);gr.addColorStop(0,'hsl('+hue+',55%,72%)');gr.addColorStop(1,'hsl('+(hue+40)+',50%,48%)');
+    c.fillStyle=gr;c.fillRect(0,0,w,h);
+    c.fillStyle='hsla('+(hue+180)+',40%,35%,.8)';c.beginPath();c.moveTo(0,h);c.lineTo(w*0.35,h*0.45);c.lineTo(w*0.7,h);c.fill();
+    c.fillStyle='hsla('+(hue+200)+',45%,28%,.85)';c.beginPath();c.moveTo(w*0.4,h);c.lineTo(w*0.75,h*0.55);c.lineTo(w,h);c.fill();
+    c.fillStyle='rgba(255,240,200,.9)';c.beginPath();c.arc(w*0.78,h*0.25,15,0,7);c.fill();
+  });
+  add(g,new THREE.PlaneGeometry(0.95,0.7),m,0,0,0.05);
+  g.position.set(x,2.1,z);g.rotation.y=ry;scene.add(g);
+}
+
+function buildRoom(i){
+  while(scene.children.length)scene.remove(scene.children[0]);
+  pickables=[];hovered=null;colliders=[];
+  var R=ROOMS[i];
+  scene.background=new THREE.Color(0x0e1124);
+  scene.fog=new THREE.Fog(0x0e1124,16,30);
+
+  var plaster=repTex(noiseCanvas(256,246,10,2600,2),3,1.2);
+  var plaster2=repTex(noiseCanvas(256,250,8,2000,2),3,3);
+  var wallM=new THREE.MeshStandardMaterial({color:R.wall,map:plaster,bumpMap:plaster,bumpScale:0.5,roughness:0.96,side:THREE.BackSide});
+  var ceilM=new THREE.MeshStandardMaterial({color:0xf1ede4,map:plaster2,roughness:1,side:THREE.BackSide});
+  var none=new THREE.MeshBasicMaterial({visible:false});
+  var wall=new THREE.Mesh(new THREE.BoxGeometry(10,4,10),[wallM,wallM,ceilM,none,wallM,wallM]);
+  wall.position.y=2;wall.receiveShadow=true;scene.add(wall);
+
+  var floor=new THREE.Mesh(new THREE.PlaneGeometry(10,10),floorMaterial(R));
+  floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+
+  var rugM=new THREE.MeshStandardMaterial({color:R.rug,map:repTex(noiseCanvas(128,200,60,2500,2),2,2),roughness:1});
+  var rug=new THREE.Mesh(new THREE.CircleGeometry(2.1,48),rugM);
+  rug.rotation.x=-Math.PI/2;rug.position.y=0.012;rug.receiveShadow=true;scene.add(rug);
+  var rim=new THREE.Mesh(new THREE.RingGeometry(1.95,2.1,48),new THREE.MeshStandardMaterial({color:0xf2e2b8,roughness:1}));
+  rim.rotation.x=-Math.PI/2;rim.position.y=0.014;scene.add(rim);
+
+  // baseboards and crown molding
+  var trim=new THREE.MeshStandardMaterial({color:0xf2efe8,roughness:0.5});
+  [[0,-4.97,10,0],[0,4.97,10,0],[-4.97,0,10,1],[4.97,0,10,1]].forEach(function(b){
+    var s=new THREE.Mesh(new THREE.BoxGeometry(b[3]?0.06:b[2],0.16,b[3]?b[2]:0.06),trim);s.position.set(b[0],0.08,b[1]);scene.add(s);
+    var cr=new THREE.Mesh(new THREE.BoxGeometry(b[3]?0.1:b[2],0.1,b[3]?b[2]:0.1),trim);cr.position.set(b[0],3.95,b[1]);scene.add(cr);
+  });
+  // ceiling beams
+  var beamM=mat(0x6b4a2f);
+  [-2.5,0,2.5].forEach(function(z){var bm=new THREE.Mesh(new THREE.BoxGeometry(10,0.18,0.22),beamM);bm.position.set(0,3.9,z);bm.castShadow=true;scene.add(bm);});
+
+  var sk=sky();
+  addWindow(3.4,-4.97,0,R.rug,sk);
+  addWindow(4.97,3.4,-Math.PI/2,R.rug,sk);
+  addWindow(-3.4,4.97,Math.PI,R.rug,sk);
+  addWindow(-4.97,3.2,Math.PI/2,R.rug,sk);
+  addPicture(-3.4,-4.95,0,20+i*70);
+  addPicture(4.95,-3.4,-Math.PI/2,150+i*40);
+  addPicture(3.4,4.95,Math.PI,280-i*30);
+  addPicture(-4.95,-3.2,Math.PI/2,60+i*50);
+
+  scene.add(new THREE.HemisphereLight(0xdfe8ff,0x6b5a4a,0.42));
+  scene.add(new THREE.AmbientLight(0xffffff,0.3));
+  var lamp=new THREE.PointLight(0xffe2b0,0.85,24);
+  lamp.position.set(0,3.4,0);lamp.castShadow=true;
+  lamp.shadow.mapSize.set(1024,1024);lamp.shadow.bias=-0.0018;lamp.shadow.camera.near=0.3;lamp.shadow.camera.far=16;
+  scene.add(lamp);
+  var shade=new THREE.Mesh(new THREE.ConeGeometry(0.4,0.3,24,1,true),new THREE.MeshStandardMaterial({color:0xf2e2b8,side:THREE.DoubleSide,emissive:0xffd28a,emissiveIntensity:0.5}));
+  shade.position.set(0,3.65,0);scene.add(shade);
+  var bulb=new THREE.Mesh(new THREE.SphereGeometry(0.12,16,16),new THREE.MeshBasicMaterial({color:0xfff0c8}));
+  bulb.position.set(0,3.5,0);scene.add(bulb);
+  var cord=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.35,6),new THREE.MeshBasicMaterial({color:0x222222}));
+  cord.position.set(0,3.82,0);scene.add(cord);
+
+  objs=[];
+  R.objs.forEach(function(o){
+    if(o.npc&&o.ry===undefined)o.ry=Math.atan2(-o.x,-o.z);
+    objs.push(o);makeInteractive(o);
+    var sz=KIND_SIZE[o.kind];
+    if(sz){
+      var swap=Math.abs(Math.sin(o.ry||0))>0.5;
+      var hw=(swap?sz[1]:sz[0])/2,hd=(swap?sz[0]:sz[1])/2;
+      colliders.push({x0:o.x-hw,x1:o.x+hw,z0:o.z-hd,z1:o.z+hd});
+    }
+  });
+  doorObj={id:'door',label:'出口門',kind:'door',x:-4.9,z:0,ry:Math.PI/2,y:0,mh:3.5,isDoor:true,done:false,qs:[]};
+  makeInteractive(doorObj);
+  objs.forEach(function(o){if(o.done)paintSolved(o);});
+  px=0;pz=0;yaw=0;pitch=0;
+  $('rn').textContent='第 '+(i+1)+' 間・'+R.name;
+  $('rs').textContent=R.sub;
+  updateKeys();renderClues();
+}
+
+function paintSolved(o){
+  o.gem.material.color.setHex(0x3fb8a0);o.gem.material.emissive.setHex(0x3fb8a0);
+}
+function updateKeys(){
+  for(var i=0;i<3;i++)$('k'+i).classList.toggle('on',i<keys);
+  $('keys').classList.toggle('open',keys>=3);
+}
+
+/* ---------- controls: pointer lock look, WASD walk, right-click interact ---------- */
+var drag=null,dragged=false,keyDown={};
+function tryLock(){
+  try{var r=canvas.requestPointerLock();if(r&&r.catch)r.catch(function(){});}catch(_){}
+}
+document.addEventListener('pointerlockchange',function(){
+  locked=(document.pointerLockElement===canvas);
+  $('cross').hidden=!locked;
+  if(!locked){$('tip').hidden=true;}
+});
+canvas.addEventListener('contextmenu',function(e){e.preventDefault();});
+canvas.addEventListener('pointerdown',function(e){
+  if(modal||!started)return;
+  lastMouse={x:e.clientX,y:e.clientY};
+  if(e.button===2){interact();return;}
+  if(e.button!==0)return;
+  if(!locked)tryLock();
+  drag={x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY};dragged=false;
+  try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+});
+canvas.addEventListener('pointermove',function(e){
+  if(modal||!started)return;
+  lastMouse={x:e.clientX,y:e.clientY};
+  if(locked){
+    yaw-=e.movementX*0.0024;
+    pitch=Math.max(-1.2,Math.min(1.2,pitch-e.movementY*0.002));
+  }else if(drag){
+    var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+    if(Math.abs(e.clientX-drag.sx)+Math.abs(e.clientY-drag.sy)>5)dragged=true;
+    if(dragged){yaw-=dx*0.005;pitch=Math.max(-1.2,Math.min(1.2,pitch-dy*0.004));}
+    drag.x=e.clientX;drag.y=e.clientY;
+  }
+});
+canvas.addEventListener('pointerup',function(e){
+  if(!drag)return;
+  drag=null;
+  try{canvas.releasePointerCapture(e.pointerId);}catch(_){}
+});
+canvas.addEventListener('pointerleave',function(){if(!locked)lastMouse=null;});
+window.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&modal&&curObj){closePanel();return;}
+  if(modal)return;
+  var k=e.key.toLowerCase();
+  if(k==='e'&&!e.repeat&&started){interact();return;}
+  if(k==='z'&&started){showZh=!showZh;renderClues();return;}
+  keyDown[k]=true;
+  if(k.indexOf('arrow')===0)e.preventDefault();
+});
+window.addEventListener('keyup',function(e){keyDown[e.key.toLowerCase()]=false;});
+window.addEventListener('blur',function(){keyDown={};});
+
+var ray=new THREE.Raycaster(),mv=new THREE.Vector2();
+function aim(){
+  if(locked){mv.set(0,0);}
+  else if(lastMouse){
+    var r=canvas.getBoundingClientRect();
+    mv.set(((lastMouse.x-r.left)/r.width)*2-1,-((lastMouse.y-r.top)/r.height)*2+1);
+  }else return null;
+  ray.setFromCamera(mv,camera);
+  ray.far=30;
+  var hit=ray.intersectObjects(pickables,false);
+  return hit.length?hit[0].object.userData.owner:null;
+}
+var REACH=3.6;
+function distTo(o){return Math.hypot(o.x-px,o.z-pz);}
+function interact(){
+  if(modal||!started)return;
+  var o=aim();
+  if(!o)return;
+  if(distTo(o)>REACH){toast('再走近一點，才能互動');return;}
+  openObject(o);
+}
+
+function step(dt){
+  var f=0,s=0;
+  if(keyDown.w||keyDown.arrowup)f+=1;
+  if(keyDown.s||keyDown.arrowdown)f-=1;
+  if(keyDown.d||keyDown.arrowright)s+=1;
+  if(keyDown.a||keyDown.arrowleft)s-=1;
+  if(!f&&!s){return false;}
+  var len=Math.hypot(f,s);f/=len;s/=len;
+  var sp=(keyDown.shift?4.6:3.1)*dt;
+  var fx=-Math.sin(yaw),fz=-Math.cos(yaw),rx=Math.cos(yaw),rz=-Math.sin(yaw);
+  var nx=px+(fx*f+rx*s)*sp,nz=pz+(fz*f+rz*s)*sp,r=0.32;
+  nx=Math.max(-4.6,Math.min(4.6,nx));nz=Math.max(-4.6,Math.min(4.6,nz));
+  colliders.forEach(function(c){
+    var cx=Math.max(c.x0,Math.min(nx,c.x1)),cz=Math.max(c.z0,Math.min(nz,c.z1));
+    var ddx=nx-cx,ddz=nz-cz,d2=ddx*ddx+ddz*ddz;
+    if(d2<r*r){
+      if(d2>1e-6){var d=Math.sqrt(d2);nx=cx+ddx/d*r;nz=cz+ddz/d*r;}
+      else{nx=px;nz=pz;}
+    }
+  });
+  px=nx;pz=nz;
+  return true;
+}
+
+var last=performance.now();
+function animate(now){
+  requestAnimationFrame(animate);
+  var dt=Math.min(0.05,((now||performance.now())-last)/1000);last=now||performance.now();
+  t+=dt;
+  var moving=false;
+  if(!modal&&started)moving=step(dt);
+  if(moving)walkT+=dt*8.5;
+  camera.position.set(px,1.62+(moving?Math.sin(walkT)*0.022:0),pz);
+  camera.rotation.y=yaw;camera.rotation.x=pitch;
+
+  hovered=(!modal&&started)?aim():null;
+  var tip=$('tip'),cross=$('cross');
+  if(hovered){
+    var far=distTo(hovered)>REACH;
+    var st=hovered.isDoor?(keys>=3?'已解鎖':'鎖住了'):(hovered.done?'已完成':'');
+    tip.textContent=hovered.label+(st?'（'+st+'）':'')+(far?' ・ 再走近一點':' ・ 右鍵互動');
+    tip.hidden=false;
+    if(locked){var r=canvas.getBoundingClientRect();tip.style.left=(r.left+r.width/2+18)+'px';tip.style.top=(r.top+r.height/2+16)+'px';}
+    else if(lastMouse){tip.style.left=(lastMouse.x+14)+'px';tip.style.top=(lastMouse.y+14)+'px';}
+    canvas.classList.add('hover');cross.classList.toggle('on',!far);
+  }else{tip.hidden=true;canvas.classList.remove('hover');cross.classList.remove('on');}
+
+  var all=objs.concat(doorObj?[doorObj]:[]);
+  all.forEach(function(o){
+    if(!o.gem)return;
+    var unlocked=!!o.isDoor&&keys>=3;
+    o.gem.visible=o.isDoor?unlocked:!!o.done;
+    if(o.gem.visible){o.gem.rotation.y+=0.03;o.gem.position.y=o.baseY+Math.sin(t*2.4+o.x)*0.07;}
+    var k=(hovered===o)?0.4:(unlocked?0.12+0.1*Math.sin(t*3):0);
+    var col=unlocked?0x3fb8a0:0xf2b84b;
+    o.mats.forEach(function(m){if(m.emissive){m.emissive.setHex(col);m.emissiveIntensity=k;}});
+  });
+  renderer.render(scene,camera);
+}
+
+/* ---------- ui helpers ---------- */
+var toastT=0;
+function toast(msg){
+  var el=$('toast');el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show');},2200);
+}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function sentenceHtml(s){return esc(s).replace('___','<span class="blank">&nbsp;&nbsp;&nbsp;</span>');}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var x=a[i];a[i]=a[j];a[j]=x;}return a;}
+function norm(s){return s.toLowerCase().replace(/[.!?]/g,'').trim();}
+
+/* ---------- sound & effects (synthesized, no audio files) ---------- */
+var AC=null,muted=false;
+function ac(){
+  if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+  if(AC&&AC.state==='suspended'){try{AC.resume();}catch(e){}}
+  return AC;
+}
+function tone(f,d,type,vol,delay){
+  var a=ac();if(!a||muted)return;
+  var s=a.currentTime+(delay||0),o=a.createOscillator(),g=a.createGain();
+  o.type=type||'sine';o.frequency.setValueAtTime(f,s);
+  g.gain.setValueAtTime(0.0001,s);g.gain.exponentialRampToValueAtTime(vol||0.15,s+0.02);g.gain.exponentialRampToValueAtTime(0.0001,s+d);
+  o.connect(g);g.connect(a.destination);o.start(s);o.stop(s+d+0.05);
+}
+var SFX={
+  ok:function(){tone(660,0.14,'triangle',0.18);tone(990,0.22,'triangle',0.18,0.1);},
+  bad:function(){tone(190,0.28,'sawtooth',0.1);tone(150,0.3,'sawtooth',0.1,0.12);},
+  click:function(){tone(520,0.06,'square',0.06);},
+  key:function(){[523,659,784,1047,1319].forEach(function(f,i){tone(f,0.28,'triangle',0.17,i*0.09);});},
+  door:function(){tone(110,0.7,'sawtooth',0.09);tone(165,0.6,'square',0.05,0.25);[784,988,1175].forEach(function(f,i){tone(f,0.3,'triangle',0.16,0.6+i*0.12);});}
+};
+function sfx(n){try{if(SFX[n])SFX[n]();}catch(_){}}
+function confetti(n){
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  var cols=['#f2b84b','#3fb8a0','#e0574f','#8ecae6','#f7f0df'];
+  for(var i=0;i<n;i++){
+    var d=document.createElement('div');
+    d.style.cssText='position:absolute;left:50%;top:42%;width:10px;height:14px;border-radius:2px;pointer-events:none;z-index:9;background:'+cols[i%cols.length];
+    app.appendChild(d);
+    var ang=Math.random()*Math.PI*2,dist=120+Math.random()*200;
+    var an=d.animate([{transform:'translate(0,0) rotate(0deg)',opacity:1},{transform:'translate('+(Math.cos(ang)*dist)+'px,'+(Math.sin(ang)*dist+160)+'px) rotate('+(Math.random()*1080-540)+'deg)',opacity:0}],{duration:800+Math.random()*600,easing:'cubic-bezier(.15,.7,.3,1)'});
+    an.onfinish=(function(el){return function(){el.remove();};})(d);
+  }
+}
+
+/* ---------- clue list (top-left) ---------- */
+var showZh=true;
+function cluesList(){
+  var R=ROOMS[roomIdx];
+  return R.objs.filter(function(o){return o.clue;}).map(function(o){
+    return '<div class="cl'+(o.done?' d':'')+'"><span>'+(o.done?'✓':'?')+'</span><div>'+esc(o.clue)+(showZh?'<small>'+esc(o.clueZh)+'</small>':'')+(o.done?'<small>→ '+esc(o.label)+'</small>':'')+'</div></div>';
+  }).join('');
+}
+function renderClues(){
+  $('cluebox').innerHTML='<div class="ch"><b>線索</b><button class="mini" id="zhbtn">'+(showZh?'隱藏中文':'顯示中文')+'</button></div>'+cluesList();
+  $('zhbtn').onclick=function(){showZh=!showZh;renderClues();};
+}
+
+/* ---------- puzzle panel ---------- */
+function openObject(o){
+  if(o.isDoor){
+    if(keys>=3){sfx('door');nextRoom();}
+    else{sfx('bad');toast('門還鎖著，還缺 '+(3-keys)+' 塊鑰匙碎片');}
+    return;
+  }
+  if(o.npc){openNpc();return;}
+  if(o.decoy){sfx('click');toast(o.msg);return;}
+  if(o.done){toast('這個地方已經找過了');return;}
+  if(!o.queue){o.queue=o.qs.slice();}
+  sfx('click');
+  curObj=o;modal=true;keyDown={};$('panel').hidden=false;$('tip').hidden=true;
+  try{document.exitPointerLock();}catch(_){}
+  renderPanel();
+}
+function closePanel(){
+  modal=false;curObj=null;$('panel').hidden=true;drag=null;keyDown={};
+  if(started&&!$('fade').classList.contains('on'))tryLock();
+}
+
+function npcSay(){
+  var R=ROOMS[roomIdx];
+  if(keys>=3)return {en:'Great job! The door is open now. Go, go, go!',zh:'太棒了！三把鑰匙都找到了，去找出口門吧！'};
+  if(keys===0&&!R.greeted)return R.intro;
+  if(keys===0)return {en:'Look at the clues. The keys are hiding!',zh:'再看看線索，鑰匙就藏在這個房間裡。'};
+  return {en:'Good! Only '+(3-keys)+' more. You can do it!',zh:'很好！還差 '+(3-keys)+' 把，加油！'};
+}
+function openNpc(){
+  var R=ROOMS[roomIdx],g=R.objs.filter(function(o){return o.npc;})[0];
+  var say=npcSay();R.greeted=true;
+  curObj=g;modal=true;keyDown={};$('panel').hidden=false;$('tip').hidden=true;
+  try{document.exitPointerLock();}catch(_){}
+  $('pcard').innerHTML='<div class="phead"><div><div class="ptitle">奶奶</div><div class="psub">'+esc(R.name)+'</div></div><button class="x" id="px" aria-label="關閉">×</button></div>'+
+   '<div class="npc" style="margin:14px 0"><div class="face">👵</div><div class="say"><div class="en">'+esc(say.en)+'</div><div class="mut">'+esc(say.zh)+'</div></div></div>'+
+   '<div class="lesson"><b>線索</b>'+cluesList()+'</div><button class="go" id="ok">好，我去找！</button>';
+  wireClose();$('ok').onclick=closePanel;
+}
+
+function head(o){
+  var total=o.qs.length,done=total-o.queue.length,d='';
+  for(var i=0;i<total;i++)d+='<i class="'+(i<done?'d':'')+'"></i>';
+  return '<div class="phead"><div><div class="ptitle">'+esc(o.label)+'</div><div class="psub">完成全部小遊戲就能拿到鑰匙碎片（'+done+' / '+total+'）</div></div><button class="x" id="px" aria-label="關閉">×</button></div><div class="dots">'+d+'</div>';
+}
+function wireClose(){var x=$('px');if(x)x.onclick=closePanel;}
+
+function advance(o){
+  o.queue.shift();
+  if(o.queue.length===0)solve(o);else renderPanel();
+}
+
+function renderPanel(){
+  var o=curObj,card=$('pcard');
+  if(o.lesson&&!o.lessonSeen){
+    card.innerHTML=head(o)+o.lesson+'<button class="go" id="pgo">我看懂了，開始挑戰</button>';
+    wireClose();$('pgo').onclick=function(){o.lessonSeen=true;renderPanel();};
+    return;
+  }
+  if(o.queue.length===0){return;}
+  var q=o.queue[0];
+  card.innerHTML=head(o)+(o.keepLesson?o.lesson:'')+'<div id="qa"></div><div id="fb"></div>';
+  wireClose();
+  RENDER[q.t](q,$('qa'));
+}
+
+function optsHtml(list){return '<div class="opts">'+list.map(function(x){return '<button class="opt" data-v="'+esc(x)+'">'+esc(x)+'</button>';}).join('')+'</div>';}
+function onEach(root,sel,fn){Array.prototype.forEach.call(root.querySelectorAll(sel),fn);}
+
+function tiles(q,qa){
+  var isO=q.t==='o';
+  var units=isO?q.ans.split(' '):q.ans.split('');
+  var join=isO?' ':'';
+  var pool=shuffle(units.map(function(w,i){return {w:w,i:i};}));
+  if(units.length>1&&pool.map(function(p){return p.w;}).join(join)===q.ans)pool.reverse();
+  var placed=[];
+  var top=isO?'<div class="zh">把單字排成句子：<b>'+esc(q.zh)+'</b></div>':'<div class="big">'+q.e+'</div><div class="zh" style="text-align:center">'+esc(q.zh)+'，用字母拼出來：</div>';
+  qa.innerHTML=top+'<div class="chips slot" id="arow"></div><div class="chips" id="pool"></div>';
+  var cls=isO?'chip':'chip letter';
+  function redraw(){
+    var a=$('arow'),p=$('pool');
+    a.innerHTML=placed.map(function(c,k){return '<button class="'+cls+'" data-k="'+k+'">'+esc(c.w)+'</button>';}).join('');
+    p.innerHTML=pool.map(function(c,k){return '<button class="'+cls+'" data-k="'+k+'">'+esc(c.w)+'</button>';}).join('');
+    onEach(a,'.chip',function(b){b.onclick=function(){sfx('click');pool.push(placed.splice(+b.getAttribute('data-k'),1)[0]);redraw();};});
+    onEach(p,'.chip',function(b){b.onclick=function(){
+      sfx('click');placed.push(pool.splice(+b.getAttribute('data-k'),1)[0]);redraw();
+      if(!pool.length){grade(q,norm(placed.map(function(c){return c.w;}).join(join))===norm(q.ans),isO?q.ans+'.':q.ans);}
+    };});
+  }
+  redraw();
+}
+
+var RENDER={
+  c:function(q,qa){
+    qa.innerHTML='<div class="qs">'+sentenceHtml(q.s)+'</div>'+optsHtml(q.opts);
+    onEach(qa,'.opt',function(b){b.onclick=function(){grade(q,b.getAttribute('data-v')===q.ans,q.ans);};});
+  },
+  t:function(q,qa){
+    qa.innerHTML='<div class="qs">'+sentenceHtml(q.s)+'</div><input class="ti" id="ti" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="輸入答案"> <button class="go" id="tgo">確定</button>';
+    var inp=$('ti');inp.focus();
+    var submit=function(){var v=inp.value.trim();if(!v)return;grade(q,norm(v)===norm(q.ans),q.ans);};
+    $('tgo').onclick=submit;
+    inp.onkeydown=function(e){if(e.key==='Enter')submit();};
+  },
+  o:function(q,qa){tiles(q,qa);},
+  s:function(q,qa){tiles(q,qa);},
+  p:function(q,qa){
+    qa.innerHTML='<div class="qs">'+esc(q.s)+'</div><div class="pics">'+q.opts.map(function(x){return '<button class="pic" data-k="'+x.k+'">'+x.e+'</button>';}).join('')+'</div>';
+    onEach(qa,'.pic',function(b){b.onclick=function(){
+      var k=b.getAttribute('data-k'),right=q.opts.filter(function(x){return x.k===q.ans;})[0];
+      grade(q,k===q.ans,right.e+' = '+q.ans);
+    };});
+  },
+  n:function(q,qa){
+    var items='';for(var i=0;i<q.n;i++)items+='<span>'+q.e+'</span>';
+    qa.innerHTML='<div class="zh">數數看，一共有幾個？</div><div class="cnt">'+items+'</div><div class="qs">'+sentenceHtml(q.s)+'</div>'+optsHtml(q.opts);
+    onEach(qa,'.opt',function(b){b.onclick=function(){grade(q,b.getAttribute('data-v')===q.ans,q.ans+'（'+q.n+'）');};});
+  },
+  y:function(q,qa){
+    qa.innerHTML='<div class="zh">口說任務：請他大聲說出來，由老師判斷</div><div class="qs">'+esc(q.zh)+'</div><div id="sm"></div><div class="say-btns"><button class="go alt" id="shw">老師看示範句</button><button class="go" id="spass">他說對了</button><button class="go alt" id="sagain">再說一次</button></div>';
+    $('shw').onclick=function(){$('sm').innerHTML='<div class="say-model">'+esc(q.model)+'</div>';};
+    $('spass').onclick=function(){grade(q,true,q.model);};
+    $('sagain').onclick=function(){grade(q,false,q.model);};
+  },
+  k:function(q,qa){
+    var o=curObj,opened=q.items.map(function(){return false;}),sel=null;
+    qa.innerHTML='<div class="zh">把鑰匙拖到對的鎖上（也可以先點鑰匙，再點鎖）</div>'+
+      q.items.map(function(it,i){return '<div class="lock" data-i="'+i+'"><span class="ls">'+sentenceHtml(it.s)+'</span><span class="li">🔒</span></div>';}).join('')+
+      '<div class="keyrow">'+q.keys.map(function(k){return '<button class="kchip" draggable="true" data-v="'+k+'">🔑 '+k+'</button>';}).join('')+'</div><div class="mut" id="lmsg" style="min-height:26px"></div>';
+    var lockEls=qa.querySelectorAll('.lock');
+    function tryKey(i,v){
+      if(opened[i]||!v)return;
+      var it=q.items[i],el=lockEls[i];
+      if(v===it.a){
+        opened[i]=true;stat.correct++;sfx('ok');
+        el.classList.remove('over');el.classList.add('open');
+        el.querySelector('.ls').innerHTML=esc(it.s).replace('___','<span class="blank">'+esc(it.a)+'</span>');
+        el.querySelector('.li').textContent='🔓';
+        $('lmsg').textContent='';
+        if(opened.every(Boolean)){setTimeout(function(){if(curObj===o)advance(o);},900);}
+      }else{
+        stat.wrong++;stat.perRoom[roomIdx]++;q.miss++;
+        stat.missed.push(it.s.replace('___','【'+it.a+'】'));
+        sfx('bad');
+        el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');
+        $('lmsg').textContent='鑰匙不對喔。'+RULE[it.a];
+      }
+    }
+    onEach(qa,'.kchip',function(b){
+      b.onclick=function(){sel=b.getAttribute('data-v');sfx('click');onEach(qa,'.kchip',function(x){x.classList.toggle('sel',x===b);});};
+      b.ondragstart=function(e){try{e.dataTransfer.setData('text/plain',b.getAttribute('data-v'));}catch(_){}};
+    });
+    onEach(qa,'.lock',function(el,i){
+      el.onclick=function(){tryKey(i,sel);};
+      el.ondragover=function(e){e.preventDefault();el.classList.add('over');};
+      el.ondragleave=function(){el.classList.remove('over');};
+      el.ondrop=function(e){e.preventDefault();el.classList.remove('over');var v='';try{v=e.dataTransfer.getData('text/plain');}catch(_){}tryKey(i,v);};
+    });
+  }
+};
+
+function promptText(q){
+  if(q.t==='o')return q.ans+'（'+q.zh+'）';
+  if(q.t==='s')return '拼字：'+q.ans+'（'+q.zh+'）';
+  if(q.t==='y')return '口說：'+q.model;
+  if(q.t==='p')return q.s+' → '+q.ans;
+  if(q.t==='n')return q.s.replace('___','【'+q.ans+'】');
+  return q.s.replace('___','【'+q.ans+'】');
+}
+
+function grade(q,ok,shown){
+  var o=curObj,fb=$('fb'),card=$('pcard');
+  onEach(card,'.opt,.chip,.ti,#tgo,.pic,#spass,#sagain,#shw',function(b){b.disabled=true;});
+  if(ok){
+    stat.correct++;sfx('ok');
+    fb.innerHTML='<div class="fb good"><b>答對了！</b> '+esc(shown)+'</div>';
+    setTimeout(function(){if(curObj===o)advance(o);},q.t==='y'?400:800);
+  }else{
+    stat.wrong++;stat.perRoom[roomIdx]++;q.miss++;
+    stat.missed.push(promptText(q));
+    sfx('bad');
+    card.classList.remove('shake');void card.offsetWidth;card.classList.add('shake');
+    var msg=q.t==='y'?'<b>再練一次。</b> 示範句：<b>'+esc(shown)+'</b>':'<b>還不對。</b> 正確答案是 <b>'+esc(shown)+'</b>'+(q.why?'<br>'+esc(q.why):'');
+    fb.innerHTML='<div class="fb bad">'+msg+'</div><button class="go" id="again">好，等一下再挑戰</button>';
+    $('again').onclick=function(){o.queue.push(o.queue.shift());renderPanel();};
+  }
+}
+
+function solve(o){
+  o.done=true;keys++;paintSolved(o);updateKeys();renderClues();
+  sfx('key');confetti(46);
+  var left=3-keys;
+  $('pcard').innerHTML=head(o).replace(/<button class="x".*?<\/button>/,'')+'<h1 style="font-size:30px;margin-top:6px">找到鑰匙碎片！</h1><p>'+(left>0?'還差 '+left+' 塊。去找奶奶聊聊，或照線索找下一個地方。':'三塊都收齊了！出口門亮起綠光，去開門吧。')+'</p><button class="go" id="ok">繼續探索</button>';
+  $('ok').onclick=closePanel;
+}
+
+/* ---------- rooms / ending ---------- */
+function nextRoom(){
+  var f=$('fade');f.classList.add('on');
+  setTimeout(function(){
+    if(roomIdx>=ROOMS.length-1){f.classList.remove('on');showEnd();return;}
+    roomIdx++;keys=0;buildRoom(roomIdx);
+    f.classList.remove('on');
+    setTimeout(openNpc,350);
+  },480);
+}
+
+function fmtTime(ms){var s=Math.round(ms/1000);return Math.floor(s/60)+' 分 '+(s%60)+' 秒';}
+function showEnd(){
+  modal=true;keyDown={};
+  try{document.exitPointerLock();}catch(_){}
+  sfx('key');confetti(70);
+  var ms=Date.now()-t0;
+  var uniq=[];stat.missed.forEach(function(m){if(uniq.indexOf(m)<0)uniq.push(m);});
+  var rep='【家族大宅密室 通關】\n用時：'+fmtTime(ms)+'\n答對：'+stat.correct+' 題　答錯：'+stat.wrong+' 題\n各房間答錯次數：'+ROOMS.map(function(r,i){return r.name+' '+stat.perRoom[i];}).join('、')+'\n';
+  rep+=uniq.length?'需要再練的句子：\n'+uniq.slice(0,12).map(function(m){return '・'+m;}).join('\n'):'全部一次答對，沒有需要再練的句子。';
+  var p=$('panel');p.hidden=false;
+  $('pcard').innerHTML='<h1>你逃出來了！</h1><div class="npc" style="margin:10px 0"><div class="face">👵</div><div class="say"><div class="en">You did it! I am so proud!</div><div class="mut">你做到了！奶奶好驕傲！</div></div></div><div class="stats"><div class="stat"><b>'+fmtTime(ms)+'</b><span>用時</span></div><div class="stat"><b>'+stat.correct+'</b><span>答對</span></div><div class="stat"><b>'+stat.wrong+'</b><span>答錯</span></div></div><p class="mut">下面是上課紀錄，可以直接複製貼到 Discord。</p><textarea class="report" id="rep" readonly></textarea><div><button class="go" id="copy">複製紀錄</button> <button class="go alt" id="again2">再玩一次</button></div>';
+  $('rep').value=rep;
+  $('copy').onclick=function(){
+    var ta=$('rep');
+    var fallback=function(){ta.focus();ta.select();toast('已選取，請按 Ctrl+C 複製');};
+    try{navigator.clipboard.writeText(rep).then(function(){toast('已複製');},fallback);}catch(e){fallback();}
+  };
+  $('again2').onclick=function(){
+    ROOMS=makeRooms();roomIdx=0;keys=0;stat={correct:0,wrong:0,perRoom:[0,0,0,0],missed:[]};t0=Date.now();
+    modal=false;p.hidden=true;buildRoom(0);setTimeout(openNpc,200);
+  };
+}
+
+/* ---------- boot ---------- */
+resize();
+buildRoom(0);
+requestAnimationFrame(animate);
+$('mute').onclick=function(){muted=!muted;$('mute').textContent=muted?'🔇':'🔊';if(!muted){ac();sfx('click');}};
+$('start').onclick=function(){
+  $('intro').hidden=true;started=true;t0=Date.now();
+  ac();sfx('click');
+  openNpc();
+  setTimeout(function(){$('hint').style.opacity='0';},16000);
+};
+if(document.fonts&&document.fonts.load){
+  document.fonts.load("700 30px Fredoka").then(function(){if(!started){buildRoom(roomIdx);}}).catch(function(){});
+}
+})();
+</script>
