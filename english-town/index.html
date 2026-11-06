@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>英文小鎮句子餐車</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;background:linear-gradient(#bfe6ff 0%,#eaf8ff 45%,#fff7e0 100%);min-height:100vh;color:#2b2b3a}
+#app{max-width:900px;margin:0 auto;padding:14px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border-radius:18px;padding:10px 16px;box-shadow:0 3px 0 #cfe3f0;font-weight:700}
+.top .pill{background:#fff3c4;border-radius:999px;padding:4px 14px;font-size:18px}
+.scene{background:linear-gradient(#9fd8ff,#d8f1ff);border-radius:22px;margin:12px 0;padding:14px;text-align:center;box-shadow:0 4px 0 #8cc3e6;position:relative;min-height:120px}
+.scene .truck{font-size:64px;line-height:1}
+.scene .deco{font-size:30px;letter-spacing:6px;min-height:38px}
+.scene .sign{font-weight:800;font-size:18px;color:#2a5d84}
+.card{background:#fff;border-radius:22px;padding:20px;margin:12px 0;box-shadow:0 4px 0 #e2d8bb}
+h1{margin:6px 0;font-size:30px}
+h2{margin:4px 0 10px;font-size:24px}
+.btn{font:inherit;font-weight:800;font-size:20px;border:0;border-radius:16px;padding:12px 22px;margin:5px;cursor:pointer;background:#ffb703;color:#3a2a00;box-shadow:0 4px 0 #d18f00}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #d18f00}
+.btn.green{background:#6bd68a;box-shadow:0 4px 0 #3fa860;color:#0c3a1a}
+.btn.blue{background:#7cc4ff;box-shadow:0 4px 0 #4b95d1;color:#0b2c4a}
+.btn.gray{background:#e4e4ea;box-shadow:0 4px 0 #b9b9c4;color:#333}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.daybtn{background:#fff;border:3px solid #ffd166;border-radius:18px;padding:12px;text-align:center;cursor:pointer;font:inherit;font-weight:700}
+.daybtn.done{background:#e4ffe9;border-color:#6bd68a}
+.daybtn.next{border-color:#ff7a59;box-shadow:0 0 0 4px #ffd9cf}
+.daybtn .e{font-size:38px}
+.vocab{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.vc{background:#fffaf0;border:2px dashed #ffcf6b;border-radius:16px;padding:10px;text-align:center;cursor:pointer}
+.vc .e{font-size:40px}
+.vc .w{font-size:22px;font-weight:800}
+.vc .z{font-size:15px;color:#666}
+.bubble{background:#fff;border:3px solid #333;border-radius:24px;padding:14px 18px;font-size:26px;font-weight:800;position:relative;margin:6px 0 10px}
+.who{display:flex;align-items:center;gap:14px}
+.who .face{font-size:72px}
+.hint-line{color:#666;font-size:16px}
+.big-input{font:inherit;font-size:26px;width:100%;padding:12px 14px;border-radius:14px;border:3px solid #7cc4ff;outline:none}
+.big-input:focus{border-color:#ff7a59}
+.fill-line{font-size:28px;font-weight:800;line-height:2.2}
+.fill-line input{font:inherit;font-size:28px;width:150px;text-align:center;border:0;border-bottom:4px solid #ff7a59;background:#fff3ee;border-radius:8px;outline:none}
+.tiles{display:flex;flex-wrap:wrap;gap:8px;min-height:56px;padding:8px;border-radius:14px}
+.tiles.ans{background:#eef7ff;border:3px dashed #7cc4ff}
+.tile{font:inherit;font-size:24px;font-weight:800;padding:8px 16px;border-radius:12px;border:0;background:#ffe08a;box-shadow:0 3px 0 #d6b24a;cursor:pointer}
+.bad{color:#e63946;font-weight:800;text-decoration:line-through}
+.mask{color:#2a7de1;font-weight:800}
+.good{color:#1a9d4a;font-weight:800}
+.msg{font-size:20px;margin:10px 0;line-height:1.7}
+.big-en{font-size:34px;font-weight:800;color:#1a5fb4;margin:8px 0}
+.toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:#2b2b3a;color:#fff;padding:10px 22px;border-radius:999px;font-weight:800;font-size:20px;z-index:9;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+textarea.report{width:100%;height:230px;font:inherit;font-size:15px;border-radius:12px;border:2px solid #ccc;padding:10px}
+.progress{height:14px;background:#e6eef5;border-radius:999px;overflow:hidden;margin-top:8px}
+.progress>div{height:100%;background:#6bd68a;transition:width .3s}
+.shake{animation:sh .35s}
+@keyframes sh{20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+.shop{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid #eee;padding:8px 0;font-size:20px;font-weight:700}
+small.s{color:#777;font-weight:500}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+<script>
+'use strict';
+/* ====================== 題庫 ====================== */
+// t: order(排序) / fill(填空) / type(打字翻譯) / free(自己造句)
+const DAYS = [
+ {name:'家人小屋', emoji:'🏠', sign:'今天的客人都是一家人',
+  vocab:[['mother','👩','媽媽'],['father','👨','爸爸'],['brother','👦','哥哥/弟弟'],['sister','👧','姊姊/妹妹'],['grandma','👵','奶奶/阿嬤'],['grandpa','👴','爺爺/阿公'],['baby','👶','寶寶'],['family','👪','家人']],
+  items:[
+   {t:'order',emoji:'👩',zh:'她是我的媽媽。',full:'She is my mother.'},
+   {t:'fill',emoji:'👨',zh:'他是我的爸爸。',pre:'He',post:'my father.',ans:['is'],full:'He is my father.'},
+   {t:'type',emoji:'👧',zh:'我是你的姊姊。',full:'I am your sister.'},
+   {t:'fill',emoji:'👦',zh:'你是我的弟弟。',pre:'You',post:'my brother.',ans:['are'],full:'You are my brother.'},
+   {t:'type',emoji:'👵',zh:'他們是我的阿公和阿嬤。',full:'They are my grandpa and grandma.',alts:['They are my grandma and grandpa.']},
+   {t:'free',emoji:'👪',zh:'自己造句：用 sister 或 brother 說一個句子。',min:3,all:['\\b(sister|brother)s?\\b'],tip:'例如 She is my sister.（要有 sister 或 brother，至少 3 個字）'}
+  ]},
+ {name:'動物園', emoji:'🦁', sign:'誰是大？誰是小？',
+  vocab:[['cat','🐱','貓'],['dog','🐶','狗'],['elephant','🐘','大象'],['monkey','🐵','猴子'],['rabbit','🐰','兔子'],['tiger','🐯','老虎'],['big','🐋','大的'],['small','🐜','小的'],['fast','💨','快的'],['cute','🥰','可愛的']],
+  items:[
+   {t:'order',emoji:'🐘',zh:'大象很大。',full:'The elephant is big.'},
+   {t:'fill',emoji:'🐰',zh:'小兔子很小。',pre:'The rabbit',post:'small.',ans:['is'],full:'The rabbit is small.'},
+   {t:'fill',emoji:'🐵',zh:'猴子們很快。',pre:'The monkeys',post:'fast.',ans:['are'],full:'The monkeys are fast.'},
+   {t:'type',emoji:'🐱',zh:'那隻貓很可愛。',full:'The cat is cute.'},
+   {t:'type',emoji:'🐯',zh:'老虎們很大。',full:'The tigers are big.'},
+   {t:'free',emoji:'🦁',zh:'自己造句：用一種動物，加上 is 或 are。',min:3,all:['\\b(cat|dog|elephant|monkey|rabbit|tiger)s?\\b','\\b(is|are)\\b'],tip:'例如 The dog is fast.'}
+  ]},
+ {name:'水果市場', emoji:'🍎', sign:'I like… / I have…',
+  vocab:[['apple','🍎','蘋果'],['banana','🍌','香蕉'],['orange','🍊','橘子'],['grape','🍇','葡萄'],['watermelon','🍉','西瓜'],['strawberry','🍓','草莓'],['lemon','🍋','檸檬'],['like','❤️','喜歡'],['have / has','🤲','有']],
+  items:[
+   {t:'order',emoji:'🍎',zh:'我喜歡蘋果。',full:'I like apples.'},
+   {t:'type',emoji:'🍌',zh:'我喜歡香蕉。',full:'I like bananas.'},
+   {t:'fill',emoji:'🍉',zh:'我有一顆西瓜。',pre:'I',post:'a watermelon.',ans:['have'],full:'I have a watermelon.'},
+   {t:'fill',emoji:'🍋',zh:'她有一顆檸檬。',pre:'She',post:'a lemon.',ans:['has'],full:'She has a lemon.'},
+   {t:'type',emoji:'🍊',zh:'你想要一顆橘子嗎？',full:'Do you want an orange?'},
+   {t:'free',emoji:'🍓',zh:'自己造句：用 like 說你喜歡的水果。',min:3,all:['\\blike\\b','\\b(apple|banana|orange|grape|watermelon|strawberry|lemon)s?\\b'],tip:'例如 I like strawberries.'}
+  ]},
+ {name:'文具店', emoji:'✏️', sign:'This is a… / That is an…',
+  vocab:[['pen','🖊️','原子筆'],['pencil','✏️','鉛筆'],['book','📖','書'],['bag','🎒','書包'],['ruler','📏','尺'],['eraser','🧽','橡皮擦'],['student','🧑‍🎓','學生'],['teacher','🧑‍🏫','老師']],
+  items:[
+   {t:'order',emoji:'🖊️',zh:'這是一枝筆。',full:'This is a pen.'},
+   {t:'fill',emoji:'🧽',zh:'這是一個橡皮擦。',pre:'This is',post:'eraser.',ans:['an'],full:'This is an eraser.'},
+   {t:'type',emoji:'🎒',zh:'那是一個書包。',full:'That is a bag.'},
+   {t:'type',emoji:'🧑‍🎓',zh:'他是一位學生。',full:'He is a student.'},
+   {t:'type',emoji:'🧑‍🏫',zh:'她是我的老師。',full:'She is my teacher.'},
+   {t:'free',emoji:'📖',zh:'自己造句：用 This is a… 或 That is a… 說一樣文具。',min:4,all:['\\b(this|that|it) is\\b','\\b(a|an)\\b'],tip:'例如 This is a ruler.（至少 4 個字）'}
+  ]},
+ {name:'服飾店', emoji:'👗', sign:'顏色＋衣服',
+  vocab:[['hat','🎩','帽子'],['shirt','👕','襯衫'],['shoes','👟','鞋子'],['dress','👗','洋裝'],['eyes','👀','眼睛'],['red','🔴','紅色'],['blue','🔵','藍色'],['yellow','🟡','黃色'],['pink','🩷','粉紅色']],
+  items:[
+   {t:'order',emoji:'🎩',zh:'她有一頂紅色的帽子。',full:'She has a red hat.'},
+   {t:'fill',emoji:'👟',zh:'他有藍色的鞋子。',pre:'He',post:'blue shoes.',ans:['has'],full:'He has blue shoes.'},
+   {t:'type',emoji:'👕',zh:'我有一件黃色的襯衫。',full:'I have a yellow shirt.'},
+   {t:'type',emoji:'👗',zh:'她的洋裝是粉紅色的。',full:'Her dress is pink.'},
+   {t:'type',emoji:'👀',zh:'她的眼睛是藍色的。',full:'Her eyes are blue.'},
+   {t:'free',emoji:'🛍️',zh:'自己造句：說說一件衣服和它的顏色。',min:4,all:['\\b(red|blue|yellow|pink|green|white|black|orange)\\b','\\b(is|are|has|have)\\b'],tip:'例如 I have a green hat.（至少 4 個字）'}
+  ]},
+ {name:'天氣心情站', emoji:'🌤️', sign:'今天天氣怎麼樣？你心情怎麼樣？',
+  vocab:[['sunny','☀️','晴天的'],['rainy','🌧️','下雨的'],['hot','🥵','熱的'],['cold','🥶','冷的'],['happy','😊','開心的'],['sad','😢','難過的'],['hungry','🤤','餓的'],['tired','😴','累的']],
+  items:[
+   {t:'order',emoji:'☀️',zh:'今天天氣晴朗。',full:'It is sunny today.'},
+   {t:'fill',emoji:'😊',zh:'我很開心。',pre:'I',post:'happy.',ans:['am'],full:'I am happy.'},
+   {t:'type',emoji:'🤤',zh:'我很餓。',full:'I am hungry.'},
+   {t:'type',emoji:'🥶',zh:'今天很冷。',full:'It is cold today.'},
+   {t:'type',emoji:'😴',zh:'他們很累。',full:'They are tired.'},
+   {t:'free',emoji:'😊',zh:'自己造句：用 I am 或 We are 說說你現在的心情。',min:3,all:['\\b(i am|we are)\\b'],tip:'例如 I am happy.'}
+  ]},
+ {name:'職業體驗館', emoji:'👩‍⚕️', sign:'他是誰？她做什麼工作？',
+  vocab:[['doctor','👨‍⚕️','醫生'],['nurse','👩‍⚕️','護理師'],['cook','👨‍🍳','廚師'],['farmer','👨‍🌾','農夫'],['singer','🎤','歌手'],['teacher','👩‍🏫','老師'],['police officer','👮','警察'],['driver','🚕','司機']],
+  items:[
+   {t:'order',emoji:'👨‍⚕️',zh:'他是一位醫生。',full:'He is a doctor.'},
+   {t:'fill',emoji:'👩‍🏫',zh:'他是一位英文老師。',pre:'He is',post:'English teacher.',ans:['an'],full:'He is an English teacher.'},
+   {t:'type',emoji:'👩‍⚕️',zh:'她是一位護理師。',full:'She is a nurse.'},
+   {t:'type',emoji:'👨‍🌾',zh:'我的爸爸是一位農夫。',full:'My father is a farmer.'},
+   {t:'type',emoji:'🎤',zh:'他們是歌手。',full:'They are singers.'},
+   {t:'free',emoji:'👨‍🍳',zh:'自己造句：說說一個人的工作。',min:4,all:['\\b(is|are)\\b','\\b(teacher|doctor|nurse|cook|farmer|singer|driver|police|student)s?\\b'],tip:'例如 My mother is a cook.（至少 4 個字）'}
+  ]},
+ {name:'大挑戰！', emoji:'🏆', sign:'問問題、回答問題，最後介紹你的家人',
+  vocab:[['Is she…?','❓','她是…嗎？'],['Are you…?','❓','你是…嗎？'],['Do you like…?','💗','你喜歡…嗎？'],['Yes, she is.','👍','是的，她是。'],['No, I am not.','👎','不，我不是。']],
+  items:[
+   {t:'order',emoji:'👧',zh:'她是你的姊姊嗎？',full:'Is she your sister?'},
+   {t:'type',emoji:'👍',zh:'（回答上一題）是的，她是。',full:'Yes, she is.'},
+   {t:'fill',emoji:'😊',zh:'你開心嗎？',pre:'',post:'you happy?',ans:['are'],full:'Are you happy?'},
+   {t:'type',emoji:'🐱',zh:'你喜歡貓嗎？',full:'Do you like cats?'},
+   {t:'type',emoji:'🐯',zh:'這是一隻大老虎。',full:'This is a big tiger.'},
+   {t:'free',emoji:'🏆',zh:'終極挑戰：寫 2 句話介紹你的一位家人。',min:7,all:['\\bmy\\b','\\b(is|has|likes|are|have|like)\\b'],tip:'例如 This is my mother. She is a nurse.（至少 7 個字）'}
+  ]}
+];
+const CUSTOMERS=[['小熊','🐻'],['小兔','🐰'],['小貓','🐱'],['小狗','🐶'],['小狐狸','🦊'],['貓熊','🐼'],['青蛙','🐸'],['小猴','🐵'],['企鵝','🐧'],['小獅','🦁']];
+const SHOP=[['🎈','氣球',15],['🌸','花盆',20],['🪑','桌椅',25],['🎵','音樂',30],['🏮','燈籠',40],['⭐','招牌星星',50]];
+
+/* ====================== 工具 ====================== */
+const CONTR={"i'm":'i am',"you're":'you are',"he's":'he is',"she's":'she is',"it's":'it is',"we're":'we are',"they're":'they are',"that's":'that is',"what's":'what is'};
+function norm(s){
+  s=String(s).toLowerCase().replace(/[’‘`´]/g,"'").replace(/[^a-z' ]/g,' ').replace(/\s+/g,' ').trim();
+  if(!s) return [];
+  const out=[]; s.split(' ').forEach(w=>{ if(CONTR[w]) out.push(...CONTR[w].split(' ')); else out.push(w.replace(/^'+|'+$/g,'')); });
+  return out.filter(Boolean);
+}
+function lcsFlags(a,b){ // 回傳 a、b 各自哪些位置在最長共同子序列內
+  const n=a.length,m=b.length,dp=Array.from({length:n+1},()=>Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--) dp[i][j]=a[i]===b[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);
+  const fa=Array(n).fill(false),fb=Array(m).fill(false); let i=0,j=0;
+  while(i<n&&j<m){ if(a[i]===b[j]){fa[i]=fb[j]=true;i++;j++;} else if(dp[i+1][j]>=dp[i][j+1]) i++; else j++; }
+  return [fa,fb];
+}
+function targets(q){ return [q.full].concat(q.alts||[]); }
+function isCorrect(q,sentence){ const s=norm(sentence).join(' '); return targets(q).some(t=>norm(t).join(' ')===s); }
+function bestTarget(q,sentence){ const s=norm(sentence); let best=q.full,sc=-1; targets(q).forEach(t=>{const [fa]=lcsFlags(norm(t),s); const c=fa.filter(Boolean).length; if(c>sc){sc=c;best=t;}}); return best; }
+function checkFree(q,sentence){
+  const toks=norm(sentence); const flat=toks.join(' ');
+  if(toks.length<q.min) return false;
+  return q.all.every(r=>new RegExp(r).test(flat));
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function shuffle(a){const b=a.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function say(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=.8;speechSynthesis.speak(u);}catch(e){}}
+let ac=null;
+function beep(ok){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type='sine';const t=ac.currentTime;
+  if(ok){o.frequency.setValueAtTime(660,t);o.frequency.setValueAtTime(880,t+.1);}else{o.frequency.setValueAtTime(220,t);}
+  g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.start(t);o.stop(t+.3);}catch(e){}}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),1800);}
+
+/* ====================== 存檔 ====================== */
+const KEY='xy_english_town_v1';
+let SAVE={coins:0,bought:[],done:{},log:{}}; // done[dayIdx]=首次通關星數; log[dayIdx]=[{full,res,wrong,free}]
+try{const r=localStorage.getItem(KEY); if(r) SAVE=Object.assign(SAVE,JSON.parse(r));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(SAVE));}catch(e){}}
+
+/* ====================== 狀態 ====================== */
+let G=null; // 目前遊玩中的狀態
+const app=document.getElementById('app');
+
+function topBar(extra){
+  return `<div class="top"><div>🏘️ 英文小鎮句子餐車</div><div>${extra||''}<span class="pill">🪙 ${SAVE.coins}</span></div></div>`;
+}
+function sceneHtml(sign){
+  const deco=SAVE.bought.map(i=>SHOP[i][0]).join(' ');
+  return `<div class="scene"><div class="deco">${deco||'&nbsp;'}</div><div class="truck">🚚</div><div class="sign">${esc(sign||'軒瑀的句子餐車')}</div></div>`;
+}
+
+/* ====================== 畫面：主選單 ====================== */
+function viewMenu(){
+  let nextDay=DAYS.findIndex((d,i)=>!(i in SAVE.done)); if(nextDay<0) nextDay=0;
+  app.innerHTML=topBar()+sceneHtml()+
+  `<div class="card"><h1>歡迎來到英文小鎮！</h1>
+   <div class="msg">你開了一輛「句子餐車」。每一天會來 6 位客人，用英文把他們說的話打出來，就能賺金幣 🪙，把餐車裝飾得越來越漂亮！</div>
+   <div class="msg">① 先看今天的單字　② 幫 6 位客人打英文句子　③ 每句都要大聲唸一次</div>
+   <button class="btn green" onclick="startDay(${nextDay})">▶ ${nextDay in SAVE.done?'再玩':'開始'} Day ${nextDay+1}：${DAYS[nextDay].name}</button>
+   <button class="btn blue" onclick="viewShop()">🛒 餐車商店</button>
+   <button class="btn gray" onclick="viewAllReport()">📋 全部紀錄</button></div>
+   <div class="card"><h2>選擇關卡</h2><div class="grid">${DAYS.map((d,i)=>`<button class="daybtn ${i in SAVE.done?'done':(i===nextDay?'next':'')}" onclick="startDay(${i})"><div class="e">${d.emoji}</div>Day ${i+1}<br>${d.name}<br>${i in SAVE.done?'⭐'.repeat(SAVE.done[i])||'✅':''}</button>`).join('')}</div></div>`;
+}
+
+/* ====================== 畫面：單字預習 ====================== */
+function startDay(i){
+  G={day:i,qi:0,tries:0,hints:0,res:[],order:null};
+  const d=DAYS[i];
+  app.innerHTML=topBar(`Day ${i+1} `)+sceneHtml(d.sign)+
+  `<div class="card"><h2>${d.emoji} Day ${i+1}：${d.name}</h2>
+   <div class="msg">先看看今天會用到的字，點一下可以聽發音 🔊。準備好就開店！</div>
+   <div class="vocab">${d.vocab.map(v=>`<div class="vc" onclick="say('${v[0].replace(/'/g,"\\'").replace(/[….]/g,'')}')"><div class="e">${v[1]}</div><div class="w">${esc(v[0])}</div><div class="z">${esc(v[2])}</div></div>`).join('')}</div>
+   <p><button class="btn green" onclick="nextQ(true)">🚚 開店營業！</button> <button class="btn gray" onclick="viewMenu()">回選單</button></p></div>`;
+}
+
+/* ====================== 畫面：客人 ====================== */
+function nextQ(first){
+  const d=DAYS[G.day];
+  if(!first) G.qi++;
+  if(G.qi>=d.items.length) return viewSummary();
+  G.tries=0; G.hints=0; G.fb='';
+  const q=d.items[G.qi];
+  if(q.t==='order'){
+    const words=q.full.replace(/[.?!]/g,'').split(' ');
+    let sh=shuffle(words); let k=0; while(sh.join(' ')===words.join(' ')&&k++<10) sh=shuffle(words);
+    G.pool=sh.map((w,i)=>({w,id:i})); G.chosen=[];
+  }
+  renderQ();
+}
+function renderQ(){
+  const d=DAYS[G.day], q=d.items[G.qi], c=CUSTOMERS[(G.day*3+G.qi)%CUSTOMERS.length];
+  const pct=Math.round(G.qi/d.items.length*100);
+  let body='';
+  if(q.t==='order'){
+    body=`<div class="msg">用單字磁鐵排出正確的句子（點單字放上去，點上面的字可以拿回來）</div>
+    <div class="tiles ans" id="ans">${G.chosen.map(t=>`<button class="tile" onclick="unpick(${t.id})">${esc(t.w)}</button>`).join('')}</div>
+    <div class="tiles" id="pool">${G.pool.filter(t=>!G.chosen.find(x=>x.id===t.id)).map(t=>`<button class="tile" onclick="pick(${t.id})">${esc(t.w)}</button>`).join('')}</div>`;
+  } else if(q.t==='fill'){
+    body=`<div class="msg">把空格補起來，打出缺的那個字：</div>
+    <div class="fill-line">${esc(q.pre)} <input id="inp" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"> ${esc(q.post)}</div>`;
+  } else if(q.t==='type'){
+    body=`<div class="msg">把客人的話，用英文<b>整句打出來</b>吧！（記得：開頭大寫、最後加句點或問號）</div>
+    <input class="big-input" id="inp" autocomplete="off" autocapitalize="sentences" autocorrect="off" spellcheck="false" placeholder="在這裡打英文…">`;
+  } else {
+    body=`<div class="msg">⭐ 加分關！自己想一個句子。<br><small class="s">${esc(q.tip)}</small></div>
+    <input class="big-input" id="inp" autocomplete="off" autocapitalize="sentences" autocorrect="off" spellcheck="false" placeholder="在這裡打你的句子…">`;
+  }
+  app.innerHTML=topBar(`Day ${G.day+1}　第 ${G.qi+1}/${d.items.length} 位 `)+sceneHtml(d.sign)+
+  `<div class="card"><div class="progress"><div style="width:${pct}%"></div></div>
+    <div class="who"><div class="face">${c[1]}</div><div style="flex:1"><div class="hint-line">${c[0]} 說：</div>
+    <div class="bubble">${q.emoji} ${esc(q.zh)}</div></div></div>
+    ${body}
+    <div class="msg" id="fb">${G.fb||''}</div>
+    <p><button class="btn green" id="go" onclick="submit()">✔ 送出</button>
+       ${q.t!=='free'?`<button class="btn blue" onclick="hint()">💡 提示</button>`:''}
+       <button class="btn gray" onclick="viewMenu()">離開</button></p></div>`;
+  const inp=document.getElementById('inp'); if(inp){inp.focus(); inp.addEventListener('keydown',e=>{if(e.key==='Enter')submit();});}
+}
+function pick(id){const t=G.pool.find(x=>x.id===id); if(t&&!G.chosen.find(x=>x.id===id)){G.chosen.push(t);renderQ();}}
+function unpick(id){G.chosen=G.chosen.filter(x=>x.id!==id);renderQ();}
+
+function currentSentence(){
+  const q=DAYS[G.day].items[G.qi];
+  if(q.t==='order') return G.chosen.map(t=>t.w).join(' ')+(G.chosen.length?q.full.slice(-1):'');
+  const v=(document.getElementById('inp')||{value:''}).value.trim();
+  if(q.t==='fill') return (q.pre+' '+v+' '+q.post).trim();
+  return v;
+}
+function rawInput(){const e=document.getElementById('inp');return e?e.value.trim():'';}
+function maskWord(w){const core=w.replace(/[^A-Za-z']/g,'');return core.length<=1?core:core[0]+'＿'.repeat(core.length-1);}
+
+function hint(){
+  const q=DAYS[G.day].items[G.qi]; G.hints++;
+  const t=norm(q.full); const showN=Math.min(G.hints,t.length);
+  let s=q.full.split(' ').map((w,i)=>i<showN?w:maskWord(w)).join(' ');
+  document.getElementById('fb').innerHTML=`💡 提示：<span class="mask">${esc(s)}</span>`;
+}
+
+function submit(){
+  const d=DAYS[G.day], q=d.items[G.qi];
+  if(G.copyMode) return submitCopy();
+  const sent=currentSentence();
+  if((q.t==='order'&&!G.chosen.length)||(q.t!=='order'&&!rawInput())){
+    const fb=document.getElementById('fb'); fb.textContent='先把答案寫出來，再按送出喔！'; return;
+  }
+  // 自創句
+  if(q.t==='free'){
+    if(checkFree(q,sent)){ return finishQ(G.tries===0?'first':'second',[],sent); }
+    G.tries++;
+    if(G.tries>=3){ return finishQ('miss',[],sent); }
+    beep(false);
+    document.getElementById('fb').innerHTML=`再想想看～要符合：${esc(q.tip)}`;
+    shake(); return;
+  }
+  if(isCorrect(q,sent)){
+    return finishQ(G.tries===0?'first':'second',[],rawInputOrSent(q,sent));
+  }
+  // 錯了
+  G.tries++; beep(false); shake();
+  const tgt=bestTarget(q,sent), a=norm(tgt), b=norm(sent);
+  const [fa,fb2]=lcsFlags(a,b);
+  const wrongWords=a.filter((w,i)=>!fa[i]);
+  G.lastWrong=(G.lastWrong||[]); wrongWords.forEach(w=>{ if(!G.curWrong) G.curWrong=[]; if(!G.curWrong.includes(w)) G.curWrong.push(w); });
+  if(G.tries>=2){ // 兩次都錯：顯示答案，要求抄寫訂正
+    G.copyMode=true; G.missSentence=sent;
+    document.getElementById('fb').innerHTML=`這一題的答案是：<div class="big-en">${esc(tgt)}</div>🔊 聽一聽，然後<b>自己打一次</b>訂正。`;
+    say(tgt);
+    swapToCopyInput(); return;
+  }
+  const studentHtml=b.map((w,i)=>fb2[i]?`<span class="good">${esc(w)}</span>`:`<span class="bad">${esc(w)}</span>`).join(' ');
+  const maskHtml=tgt.split(' ').map((w,i)=>fa[i]?esc(w):`<span class="mask">${esc(maskWord(w))}</span>`).join(' ');
+  document.getElementById('fb').innerHTML=`差一點點！<br>你寫的：${studentHtml}<br>提示：${maskHtml}<br>紅色的字再想一想，再試一次！`;
+  if(q.t==='order'){ G.chosen=[]; renderQMsgKeep(document.getElementById('fb').innerHTML); }
+  else { const inp=document.getElementById('inp'); inp.select&&inp.select(); }
+}
+function rawInputOrSent(q,sent){return q.t==='order'||q.t==='fill'?sent:rawInput();}
+function renderQMsgKeep(html){G.fb=html;renderQ();G.fb='';}
+function shake(){const c=document.querySelector('.card:last-of-type');if(c){c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake');}}
+
+function swapToCopyInput(){
+  const q=DAYS[G.day].items[G.qi];
+  const box=document.querySelector('.card:last-of-type');
+  // 保留氣泡，替換作答區
+  let area=document.getElementById('inp');
+  if(q.t==='order'){
+    document.getElementById('ans').outerHTML=`<input class="big-input" id="inp" autocomplete="off" autocapitalize="sentences" spellcheck="false" placeholder="自己把答案打一次…">`;
+    const p=document.getElementById('pool'); if(p)p.remove();
+  } else if(q.t==='fill'){
+    const fl=document.querySelector('.fill-line'); if(fl) fl.outerHTML=`<input class="big-input" id="inp" autocomplete="off" autocapitalize="sentences" spellcheck="false" placeholder="自己把整句打一次…">`;
+  } else { area.value=''; area.placeholder='自己把答案打一次…'; }
+  const inp=document.getElementById('inp'); inp.value=''; inp.focus();
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')submit();});
+}
+function submitCopy(){
+  const q=DAYS[G.day].items[G.qi]; const v=rawInput();
+  if(isCorrect(q,v)){ G.copyMode=false; return finishQ('miss',G.curWrong||[],v); }
+  beep(false); shake(); document.getElementById('fb').insertAdjacentHTML('beforeend','<div class="bad" style="text-decoration:none">還不一樣喔，看著答案再打一次。</div>');
+}
+
+function finishQ(res,wrong,sentence){
+  const d=DAYS[G.day], q=d.items[G.qi];
+  let pts=res==='first'?3:res==='second'?2:0, bonus=0;
+  if(q.t!=='order'&&q.t!=='fill'&&res!=='miss'){ const r=sentence; if(/^[A-Z]/.test(r)&&/[.?!]$/.test(r)) bonus=1; }
+  G.res.push({full:q.t==='free'?'':q.full,zh:q.zh,res,wrong:(G.curWrong||wrong||[]).slice(0,4),free:q.t==='free'?sentence:'',hints:G.hints,pts:pts+bonus,free_ok:q.t==='free'?res!=='miss':null});
+  G.curWrong=null;
+  SAVE.coins+=pts+bonus; save();
+  if(res!=='miss'){ beep(true); toast(`+${pts} 🪙${bonus?`  ＋${bonus} 大寫句點獎勵！`:''}`); }
+  // 唸一唸畫面
+  const say_text=q.t==='free'?sentence:q.full;
+  const c=CUSTOMERS[(G.day*3+G.qi)%CUSTOMERS.length];
+  const praise=res==='first'?'太棒了！一次就對！🎉':res==='second'?'答對了！很會修正！👍':'訂正完成！下次會更好 💪';
+  app.innerHTML=topBar(`Day ${G.day+1}　第 ${G.qi+1}/${d.items.length} 位 `)+sceneHtml(d.sign)+
+  `<div class="card"><div class="who"><div class="face">${c[1]}</div><div style="flex:1"><div class="bubble">${praise}</div></div></div>
+   <div class="big-en">${esc(say_text)}</div>
+   <div class="msg">${esc(q.zh.replace(/^自己造句：|^終極挑戰：/,''))}<br>🔊 聽一聽，然後<b>大聲唸一次</b>給老師聽！</div>
+   <p><button class="btn blue" onclick="say(${esc(JSON.stringify(say_text))})">🔊 再聽一次</button>
+   <button class="btn green" id="nx" onclick="nextQ(false)">🗣️ 我唸好了 → 下一位</button></p></div>`;
+  say(say_text);
+}
+
+/* ====================== 結算 ====================== */
+function dayReport(i,res){
+  const d=DAYS[i]; const first=res.filter(r=>r.res==='first').length;
+  let t=`【軒瑀 英文小鎮 Day ${i+1}：${d.name}】\n完成 ${res.length}/${d.items.length} 位客人，一次就對 ${first} 位。\n`;
+  const weak=res.filter(r=>r.res!=='first'&&r.full);
+  if(weak.length){ t+='需要再練的句子：\n'; weak.forEach((r,k)=>{ t+=`${k+1}. ${r.full}${r.res==='miss'?'（兩次沒答對）':'（第二次答對）'}${r.wrong&&r.wrong.length?' 卡在：'+r.wrong.join(', '):''}\n`; }); }
+  else t+='所有題目都一次答對！\n';
+  const fr=res.filter(r=>r.free);
+  if(fr.length){ t+='自創句（請 Qian 看一下）：\n'; fr.forEach(r=>{t+=`- ${r.free}${r.free_ok?'':'（沒符合題目要求）'}\n`;}); }
+  const hs=res.reduce((s,r)=>s+(r.hints||0),0); if(hs) t+=`提示使用 ${hs} 次。\n`;
+  return t.trim();
+}
+function viewSummary(){
+  const i=G.day, d=DAYS[i]; const first=G.res.filter(r=>r.res==='first').length;
+  const stars=first>=6?3:first>=4?2:first>=2?1:0;
+  if(!(i in SAVE.done)||SAVE.done[i]<stars) SAVE.done[i]=Math.max(stars,0);
+  SAVE.log[i]=dayReport(i,G.res); save();
+  const gained=G.res.reduce((s,r)=>s+r.pts,0);
+  app.innerHTML=topBar(`Day ${i+1} 結算 `)+sceneHtml('今天營業結束！')+
+  `<div class="card"><h2>🎉 Day ${i+1}「${d.name}」營業結束</h2>
+   <div class="msg">一次就對：${first} / ${d.items.length} 位　　${'⭐'.repeat(stars)||'再接再厲'}<br>今天賺了 🪙 ${gained}（目前共 ${SAVE.coins}）</div>
+   <div class="msg"><b>給 Qian 的紀錄</b>（按「複製」貼到 Discord）：</div>
+   <textarea class="report" id="rep" readonly>${esc(SAVE.log[i])}</textarea>
+   <p><button class="btn blue" onclick="copyText(document.getElementById('rep').value)">📋 複製紀錄</button>
+   <button class="btn" onclick="viewShop()">🛒 去商店</button>
+   ${i+1<DAYS.length?`<button class="btn green" onclick="startDay(${i+1})">▶ 下一天</button>`:''}
+   <button class="btn gray" onclick="startDay(${i})">🔁 再玩一次</button>
+   <button class="btn gray" onclick="viewMenu()">回選單</button></p></div>`;
+}
+function viewAllReport(){
+  const keys=Object.keys(SAVE.log).map(Number).sort((a,b)=>a-b);
+  let t=keys.map(k=>SAVE.log[k]).join('\n\n'); if(!t) t='還沒有紀錄，先玩一天吧！';
+  if(t.length>1900) t=t.slice(t.length-1900);
+  app.innerHTML=topBar()+sceneHtml()+`<div class="card"><h2>📋 全部紀錄</h2><textarea class="report" id="rep" readonly>${esc(t)}</textarea>
+  <p><button class="btn blue" onclick="copyText(document.getElementById('rep').value)">📋 複製</button>
+  <button class="btn gray" onclick="viewMenu()">回選單</button>
+  <button class="btn gray" onclick="resetAll()">🗑️ 清除存檔（老師用）</button></p></div>`;
+}
+function resetAll(){ if(confirm('確定要清除所有進度和金幣嗎？')){ SAVE={coins:0,bought:[],done:{},log:{}}; save(); viewMenu(); } }
+function copyText(t){
+  const done=()=>toast('已複製 ✅');
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(t).then(done,()=>fallbackCopy(t)); return; } }catch(e){}
+  fallbackCopy(t);
+}
+function fallbackCopy(t){ const ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');toast('已複製 ✅');}catch(e){toast('請手動選取複製');} ta.remove(); }
+
+/* ====================== 商店 ====================== */
+function viewShop(){
+  app.innerHTML=topBar()+sceneHtml()+`<div class="card"><h2>🛒 餐車商店</h2>
+  ${SHOP.map((s,i)=>`<div class="shop"><span>${s[0]} ${s[1]}</span><span>${SAVE.bought.includes(i)?'✅ 已裝上':`<button class="btn green" style="font-size:16px;padding:6px 14px" ${SAVE.coins<s[2]?'disabled':''} onclick="buy(${i})">🪙 ${s[2]} 購買</button>`}</span></div>`).join('')}
+  <p><button class="btn gray" onclick="viewMenu()">回選單</button></p></div>`;
+}
+function buy(i){ if(SAVE.coins>=SHOP[i][2]&&!SAVE.bought.includes(i)){ SAVE.coins-=SHOP[i][2]; SAVE.bought.push(i); save(); beep(true); toast('餐車變漂亮了！'); viewShop(); } }
+
+viewMenu();
+</script>
+</body>
+</html>
