@@ -78,7 +78,7 @@ const DAYS = [
    {t:'type',emoji:'👧',zh:'我是你的姊姊。',full:'I am your sister.'},
    {t:'fill',emoji:'👦',zh:'你是我的弟弟。',pre:'You',post:'my brother.',ans:['are'],full:'You are my brother.'},
    {t:'type',emoji:'👵',zh:'他們是我的阿公和阿嬤。',full:'They are my grandpa and grandma.',alts:['They are my grandma and grandpa.']},
-   {t:'free',emoji:'👪',zh:'自己造句：用 sister 或 brother 說一個句子。',min:3,all:['\\b(sister|brother)s?\\b'],tip:'例如 She is my sister.（要有 sister 或 brother，至少 3 個字）'}
+   {t:'free',emoji:'👪',zh:'自己造句：用 sister 或 brother 說一個句子。',min:3,all:['\\b(sister|brother)s?\\b','\\b(is|am|are)\\b'],tip:'例如 She is my sister.（要用英文，有 sister 或 brother 和 is/am/are，至少 3 個字）'}
   ]},
  {name:'動物園', emoji:'🦁', sign:'誰是大？誰是小？',
   vocab:[['cat','🐱','貓'],['dog','🐶','狗'],['elephant','🐘','大象'],['monkey','🐵','猴子'],['rabbit','🐰','兔子'],['tiger','🐯','老虎'],['big','🐋','大的'],['small','🐜','小的'],['fast','💨','快的'],['cute','🥰','可愛的']],
@@ -111,7 +111,7 @@ const DAYS = [
    {t:'free',emoji:'📖',zh:'自己造句：用 This is a… 或 That is a… 說一樣文具。',min:4,all:['\\b(this|that|it) is\\b','\\b(a|an)\\b'],tip:'例如 This is a ruler.（至少 4 個字）'}
   ]},
  {name:'服飾店', emoji:'👗', sign:'顏色＋衣服',
-  vocab:[['hat','🎩','帽子'],['shirt','👕','襯衫'],['shoes','👟','鞋子'],['dress','👗','洋裝'],['eyes','👀','眼睛'],['red','🔴','紅色'],['blue','🔵','藍色'],['yellow','🟡','黃色'],['pink','🩷','粉紅色']],
+  vocab:[['hat','🎩','帽子'],['shirt','👕','襯衫'],['shoes','👟','鞋子'],['dress','👗','洋裝'],['eyes','👀','眼睛'],['red','🔴','紅色'],['blue','🔵','藍色'],['yellow','🟡','黃色'],['pink','💗','粉紅色']],
   items:[
    {t:'order',emoji:'🎩',zh:'她有一頂紅色的帽子。',full:'She has a red hat.'},
    {t:'fill',emoji:'👟',zh:'他有藍色的鞋子。',pre:'He',post:'blue shoes.',ans:['has'],full:'He has blue shoes.'},
@@ -195,6 +195,7 @@ function targets(q){ return [q.full].concat(q.alts||[]); }
 function isCorrect(q,sentence){ const s=norm(sentence).join(' '); return targets(q).some(t=>norm(t).join(' ')===s); }
 function bestTarget(q,sentence){ const s=norm(sentence); let best=q.full,sc=-1; targets(q).forEach(t=>{const [fa]=lcsFlags(norm(t),s); const c=fa.filter(Boolean).length; if(c>sc){sc=c;best=t;}}); return best; }
 function checkFree(q,sentence){
+  if(/[\u3400-\u9fff]/.test(sentence)) return false;
   const toks=norm(sentence); const flat=toks.join(' ');
   if(toks.length<q.min) return false;
   return q.all.every(r=>new RegExp(r).test(flat));
@@ -221,7 +222,7 @@ const app=document.getElementById('app');
 function isBoss(qi,d){ return qi>=d.items.length-3; }
 function hearts(n){ return '❤️'.repeat(n)+'🖤'.repeat(3-n); }
 function topBar(extra){
-  return `<div class="top"><div>🏘️ 英文小鎮句子餐車</div><div>${extra||''}<span class="pill">🪙 ${SAVE.coins}</span></div></div>`;
+  return `<div class="top"><div>🏘️ 英文小鎮句子餐車</div><div>${extra||''}<span class="pill">💰 ${SAVE.coins}</span></div></div>`;
 }
 function sceneHtml(sign){
   const deco=SAVE.bought.map(i=>SHOP[i][0]).join(' ');
@@ -233,7 +234,7 @@ function viewMenu(){
   let nextDay=DAYS.findIndex((d,i)=>!(i in SAVE.done)); if(nextDay<0) nextDay=0;
   app.innerHTML=topBar()+sceneHtml()+
   `<div class="card"><h1>歡迎來到英文小鎮！</h1>
-   <div class="msg">你開了一輛「句子餐車」。每一天會來 6 位客人，用英文把他們說的話打出來，就能賺金幣 🪙，把餐車裝飾得越來越漂亮！</div>
+   <div class="msg">你開了一輛「句子餐車」。每一天會來 6 位客人，用英文把他們說的話打出來，就能賺金幣 💰，把餐車裝飾得越來越漂亮！</div>
    <div class="msg">① 先看今天的單字　② 幫 6 位客人打英文句子　③ 每句都要大聲唸一次</div>
    <button class="btn green" onclick="startDay(${nextDay})">▶ ${nextDay in SAVE.done?'再玩':'開始'} Day ${nextDay+1}：${DAYS[nextDay].name}</button>
    <button class="btn blue" onclick="viewShop()">🛒 餐車商店</button>
@@ -397,7 +398,7 @@ function finishQ(res,wrong,sentence){
   G.res.push({full:q.t==='free'?'':q.full,zh:q.zh,res,wrong:(G.curWrong||wrong||[]).slice(0,4),free:q.t==='free'?sentence:'',hints:G.hints,pts:pts+bonus,free_ok:q.t==='free'?res!=='miss':null});
   G.curWrong=null;
   SAVE.coins+=pts+bonus; save();
-  if(res!=='miss'){ beep(true); toast(`+${pts+bonus} 🪙${G.combo>=3?'  🔥連擊 '+G.combo:''}`); }
+  if(res!=='miss'){ beep(true); toast(`+${pts+bonus} 💰${G.combo>=3?'  🔥連擊 '+G.combo:''}`); }
   // 唸一唸畫面
   const say_text=q.t==='free'?sentence:q.full;
   const c=CUSTOMERS[(G.day*3+G.qi)%CUSTOMERS.length];
@@ -437,8 +438,8 @@ function viewSummary(){
   const gained=G.res.reduce((s,r)=>s+r.pts,0)+bossBonus;
   app.innerHTML=topBar(`Day ${i+1} 結算 `)+sceneHtml('今天營業結束！')+
   `<div class="card"><h2>🎉 Day ${i+1}「${d.name}」營業結束</h2>
-   <div class="msg">${defeated?`🎉 你打敗了 ${BOSSES[i][1]}「${BOSSES[i][0]}」！＋5 🪙 稀有貼紙收進圖鑑！`:`${BOSSES[i][1]}「${BOSSES[i][0]}」逃跑了…明天再來挑戰！`}</div>
-   <div class="msg">一次就對：${first} / ${d.items.length} 位　　${'⭐'.repeat(stars)||'再接再厲'}　最高連擊 🔥${G.maxCombo}<br>今天賺了 🪙 ${gained}（目前共 ${SAVE.coins}）</div>
+   <div class="msg">${defeated?`🎉 你打敗了 ${BOSSES[i][1]}「${BOSSES[i][0]}」！＋5 💰 稀有貼紙收進圖鑑！`:`${BOSSES[i][1]}「${BOSSES[i][0]}」逃跑了…明天再來挑戰！`}</div>
+   <div class="msg">一次就對：${first} / ${d.items.length} 位　　${'⭐'.repeat(stars)||'再接再厲'}　最高連擊 🔥${G.maxCombo}<br>今天賺了 💰 ${gained}（目前共 ${SAVE.coins}）</div>
    <div class="msg"><b>給 Qian 的紀錄</b>（按「複製」貼到 Discord）：</div>
    <textarea class="report" id="rep" readonly>${esc(SAVE.log[i])}</textarea>
    <p><button class="btn blue" onclick="copyText(document.getElementById('rep').value)">📋 複製紀錄</button>
@@ -473,7 +474,7 @@ function viewAlbum(){
 /* ====================== 商店 ====================== */
 function viewShop(){
   app.innerHTML=topBar()+sceneHtml()+`<div class="card"><h2>🛒 餐車商店</h2>
-  ${SHOP.map((s,i)=>`<div class="shop"><span>${s[0]} ${s[1]}</span><span>${SAVE.bought.includes(i)?'✅ 已裝上':`<button class="btn green" style="font-size:16px;padding:6px 14px" ${SAVE.coins<s[2]?'disabled':''} onclick="buy(${i})">🪙 ${s[2]} 購買</button>`}</span></div>`).join('')}
+  ${SHOP.map((s,i)=>`<div class="shop"><span>${s[0]} ${s[1]}</span><span>${SAVE.bought.includes(i)?'✅ 已裝上':`<button class="btn green" style="font-size:16px;padding:6px 14px" ${SAVE.coins<s[2]?'disabled':''} onclick="buy(${i})">💰 ${s[2]} 購買</button>`}</span></div>`).join('')}
   <p><button class="btn gray" onclick="viewMenu()">回選單</button></p></div>`;
 }
 function buy(i){ if(SAVE.coins>=SHOP[i][2]&&!SAVE.bought.includes(i)){ SAVE.coins-=SHOP[i][2]; SAVE.bought.push(i); save(); beep(true); toast('餐車變漂亮了！'); viewShop(); } }
