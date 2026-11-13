@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>方塊世界英文礦工</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;background:linear-gradient(#8fd3ff 0%,#cdeeff 55%,#7ec850 55%,#7ec850 58%,#8b5a2b 58%);min-height:100vh;color:#2b2b3a;background-attachment:fixed}
+#app{max-width:900px;margin:0 auto;padding:14px}
+.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;background:#5b5b5b;color:#fff;border:4px solid #2e2e2e;padding:8px 14px;font-weight:800;font-size:18px}
+.pack{background:#3b3b3b;border:3px solid #1d1d1d;padding:4px 10px;font-size:22px;min-height:40px;letter-spacing:4px}
+.card{background:#f2e6c9;border:5px solid #5a3e1b;padding:18px;margin:14px 0;box-shadow:6px 6px 0 #3a2812}
+h1,h2{margin:4px 0 10px}
+.btn{font:inherit;font-weight:800;font-size:20px;padding:10px 20px;margin:5px;cursor:pointer;background:#6dbf4b;color:#0d2a05;border:4px solid #2f6b1a;box-shadow:0 5px 0 #2f6b1a}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #2f6b1a}
+.btn.gray{background:#c9c9c9;border-color:#6d6d6d;box-shadow:0 5px 0 #6d6d6d;color:#222}
+.btn.blue{background:#6cc3ff;border-color:#2a73a8;box-shadow:0 5px 0 #2a73a8;color:#06243b}
+.btn:disabled{opacity:.4}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.stg{font:inherit;font-weight:800;background:#b98b52;border:4px solid #5a3e1b;padding:12px;cursor:pointer;color:#2b1a05}
+.stg.done{background:#9fd97a}
+.stg .e{font-size:40px}
+.vocab{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.vc{background:#fff;border:3px solid #5a3e1b;padding:8px;text-align:center;cursor:pointer}
+.vc .e{font-size:38px}.vc .w{font-size:22px;font-weight:800}.vc .z{font-size:14px;color:#555}
+.block{width:130px;height:130px;margin:6px auto;background:#8b5a2b;border:6px solid #4a2f12;box-shadow:inset -10px -10px 0 #6b4220,inset 10px 10px 0 #a8743a;display:flex;align-items:center;justify-content:center;font-size:70px}
+.block.mine{animation:mine .7s forwards}
+@keyframes mine{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px) rotate(-3deg)}40%{transform:translateX(8px) rotate(3deg)}70%{opacity:1}100%{opacity:0;transform:scale(.3) translateY(60px)}}
+.slots{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.slot{width:54px;height:62px;border:4px solid #3a2812;background:#fff;font-size:34px;font-weight:900;display:flex;align-items:center;justify-content:center;font-family:"Courier New",monospace}
+.slot.ok{background:#bdf29a}
+.tiles{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0;min-height:60px}
+.tile{font:inherit;font-size:30px;font-weight:900;font-family:"Courier New",monospace;min-width:56px;height:60px;padding:0 12px;cursor:pointer;background:#9a9a9a;color:#fff;border:4px solid #4a4a4a;box-shadow:inset -5px -5px 0 #707070,inset 5px 5px 0 #bcbcbc}
+.tile.w{font-size:24px;font-family:inherit;background:#c9a15c;border-color:#6b4a1c;box-shadow:inset -5px -5px 0 #a8803d,inset 5px 5px 0 #e3c283;color:#2b1a05}
+.tile.good{background:#7fd35a;border-color:#2f6b1a;color:#0d2a05}
+.tile.bad{background:#ff8a80;border-color:#b3261e}
+.ans{background:#fff;border:4px dashed #5a3e1b;padding:8px;min-height:76px}
+.msg{font-size:20px;margin:8px 0;line-height:1.7}
+.big-en{font-size:34px;font-weight:900;color:#1a5fb4;margin:6px 0}
+.shake{animation:sh .3s}
+@keyframes sh{20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:#2b2b3a;color:#fff;padding:8px 20px;font-weight:800;font-size:20px;z-index:9;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+textarea.report{width:100%;height:230px;font:inherit;font-size:15px;border:3px solid #5a3e1b;padding:8px}
+.bar{height:16px;background:#cbb88f;border:3px solid #5a3e1b}.bar>div{height:100%;background:#6dbf4b}
+</style>
+</head>
+<body>
+<div id="app"></div><div id="toast" class="toast"></div>
+<script>
+'use strict';
+const STAGES=[
+ {name:'自然森林',emoji:'🌳',words:[['tree','🌳','樹'],['flower','🌸','花'],['water','🌊','水'],['fire','🔥','火'],['moon','🌙','月亮'],['sun','☀️','太陽'],['mountain','⛰️','山'],['rain','🌧️','雨']],
+  sents:[['I see a tree.','我看到一棵樹。'],['The sun is big.','太陽很大。'],['This is water.','這是水。'],['I like the moon.','我喜歡月亮。']]},
+ {name:'動物農場',emoji:'🐄',words:[['cow','🐄','牛'],['pig','🐖','豬'],['sheep','🐑','綿羊'],['chicken','🐔','雞'],['horse','🐴','馬'],['dog','🐶','狗'],['cat','🐱','貓'],['fish','🐟','魚']],
+  sents:[['This is a cow.','這是一隻牛。'],['I see a pig.','我看到一隻豬。'],['The sheep is big.','綿羊很大。'],['I like chickens.','我喜歡小雞。']]},
+ {name:'美食廚房',emoji:'🍞',words:[['apple','🍎','蘋果'],['bread','🍞','麵包'],['carrot','🥕','紅蘿蔔'],['potato','🥔','馬鈴薯'],['egg','🥚','蛋'],['cake','🍰','蛋糕'],['milk','🥛','牛奶'],['rice','🍚','飯']],
+  sents:[['I like bread.','我喜歡麵包。'],['I have an apple.','我有一顆蘋果。'],['This is a cake.','這是一個蛋糕。'],['Do you want milk?','你想要牛奶嗎？']]},
+ {name:'礦工工具間',emoji:'⛏️',words:[['sword','🗡️','劍'],['pickaxe','⛏️','鎬子'],['diamond','💎','鑽石'],['bow','🏹','弓'],['shield','🛡️','盾牌'],['key','🔑','鑰匙'],['map','🗺️','地圖'],['boat','⛵','船']],
+  sents:[['I have a sword.','我有一把劍。'],['This is a pickaxe.','這是一支鎬子。'],['I have a diamond.','我有一顆鑽石。'],['I see a boat.','我看到一艘船。']]},
+ {name:'我的小屋',emoji:'🏠',words:[['house','🏠','房子'],['door','🚪','門'],['bed','🛏️','床'],['box','📦','箱子'],['lamp','💡','燈'],['phone','📱','手機'],['clock','⏰','時鐘'],['book','📖','書']],
+  sents:[['This is my house.','這是我的房子。'],['I have a bed.','我有一張床。'],['The door is big.','門很大。'],['I see a lamp.','我看到一盞燈。']]}
+];
+const KEY='xy_blockworld_v1';
+let SAVE={inv:[],done:{},log:{}};
+try{const r=localStorage.getItem(KEY);if(r)SAVE=Object.assign(SAVE,JSON.parse(r));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(SAVE));}catch(e){}}
+const app=document.getElementById('app');
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function shuffle(a){const b=a.slice();for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function say(t){try{if(!('speechSynthesis' in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='en-US';u.rate=.8;speechSynthesis.speak(u);}catch(e){}}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),1500);}
+function copyText(t){const f=()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('已複製 ✅');}catch(e){toast('請手動選取複製');}ta.remove();};
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(()=>toast('已複製 ✅'),f);return;}}catch(e){}f();}
+function topBar(extra){const inv=SAVE.inv.map(w=>{for(const s of STAGES){const x=s.words.find(v=>v[0]===w);if(x)return x[1];}return '';}).join('');
+  return `<div class="top"><div>⛏️ 方塊世界英文礦工 ${extra||''}</div></div><div class="pack">🎒 背包：${inv||'（還沒有東西）'}</div>`;}
+
+/* ---------- 選單 ---------- */
+function viewMenu(){
+  const total=STAGES.reduce((s,x)=>s+x.words.length,0);
+  app.innerHTML=topBar()+`<div class="card"><h1>⛏️ 歡迎來到方塊世界！</h1>
+  <div class="msg">你是一位英文礦工。每個關卡先認識單字，再<b>挖方塊</b>（把單字的字母拼出來），最後用挖到的東西<b>合成句子</b>。</div>
+  <div class="msg">背包 ${SAVE.inv.length}/${total} 個寶物</div>
+  <div class="grid">${STAGES.map((s,i)=>`<button class="stg ${SAVE.done[i]?'done':''}" onclick="startStage(${i})"><div class="e">${s.emoji}</div>關卡 ${i+1}<br>${s.name}<br>${SAVE.done[i]?'✅ 完成':''}</button>`).join('')}</div>
+  <p><button class="btn gray" onclick="viewReport()">📋 全部紀錄</button></p></div>`;
+}
+
+/* ---------- 單字預習 ---------- */
+let G=null;
+function startStage(i){
+  G={s:i,idx:0,wrongL:{},tries:[],sres:[],phase:'prev'};
+  const st=STAGES[i];
+  app.innerHTML=topBar(`關卡 ${i+1}`)+`<div class="card"><h2>${st.emoji} 關卡 ${i+1}：${st.name}</h2>
+  <div class="msg">點一下單字可以聽發音 🔊。看熟了就出發去挖礦！</div>
+  <div class="vocab">${st.words.map(v=>`<div class="vc" onclick="say('${v[0]}')"><div class="e">${v[1]}</div><div class="w">${v[0]}</div><div class="z">${v[2]}</div></div>`).join('')}</div>
+  <p><button class="btn" onclick="nextWord()">⛏️ 開始挖礦</button><button class="btn gray" onclick="viewMenu()">回選單</button></p></div>`;
+}
+
+/* ---------- 挖礦：拼字母 ---------- */
+function nextWord(){
+  const st=STAGES[G.s];
+  if(G.idx>=st.words.length){G.idx=0;return nextSent();}
+  const [w,e,z]=st.words[G.idx];
+  G.cur={w,e,z,pos:0,wrong:0,tiles:shuffle(w.split('').map((c,i)=>({c,id:i}))),used:[]};
+  let k=0;while(G.cur.tiles.map(t=>t.c).join('')===w&&w.length>2&&k++<10)G.cur.tiles=shuffle(G.cur.tiles);
+  renderWord(); say(w);
+}
+function renderWord(){
+  const c=G.cur, st=STAGES[G.s];
+  app.innerHTML=topBar(`關卡 ${G.s+1}　挖礦 ${G.idx+1}/${st.words.length}`)+`<div class="card">
+   <div class="bar"><div style="width:${G.idx/st.words.length*100}%"></div></div>
+   <div class="msg" style="text-align:center">用字母方塊拼出這個東西的英文：<b>${c.z}</b></div>
+   <div class="block" id="blk">${c.e}</div>
+   <div class="slots">${c.w.split('').map((ch,i)=>`<div class="slot ${i<c.pos?'ok':''}">${i<c.pos?ch:''}</div>`).join('')}</div>
+   <div class="tiles">${c.tiles.filter(t=>!c.used.includes(t.id)).map(t=>`<button class="tile" onclick="pickL(${t.id})">${t.c}</button>`).join('')}</div>
+   <p style="text-align:center"><button class="btn blue" onclick="say('${c.w}')">🔊 再聽一次</button> <button class="btn gray" onclick="hintL()">💡 提示</button></p></div>`;
+}
+function pickL(id){
+  const c=G.cur, t=c.tiles.find(x=>x.id===id);
+  if(t.c===c.w[c.pos]){ c.used.push(id); c.pos++; if(c.pos===c.w.length) return doneWord(); renderWord(); }
+  else{ c.wrong++; G.wrongL[c.w]=(G.wrongL[c.w]||0)+1; toast('不是這個字母喔'); const b=document.querySelector('.slots'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); }
+}
+function hintL(){ const c=G.cur; c.hint=(c.hint||0)+1; G.hints=(G.hints||0)+1; toast('下一個字母是：'+c.w[c.pos]); }
+function doneWord(){
+  const c=G.cur; renderWord(); document.getElementById('blk').classList.add('mine'); say(c.w);
+  if(!SAVE.inv.includes(c.w)){SAVE.inv.push(c.w);save();}
+  setTimeout(()=>{ app.innerHTML=topBar(`關卡 ${G.s+1}`)+`<div class="card" style="text-align:center"><div class="big-en">${c.e} ${c.w}</div><div class="msg">挖到了！🎉 大聲唸一次：<b>${c.w}</b></div>
+   <button class="btn blue" onclick="say('${c.w}')">🔊 再聽一次</button> <button class="btn" onclick="G.idx++;nextWord()">🗣️ 我唸好了 → 下一個</button></div>`; },750);
+}
+
+/* ---------- 合成句子 ---------- */
+function nextSent(){
+  const st=STAGES[G.s];
+  if(G.idx>=st.sents.length) return viewEnd();
+  const [full,zh]=st.sents[G.idx]; const words=full.replace(/[.?!]/g,'').split(' ');
+  let sh=shuffle(words),k=0; while(sh.join(' ')===words.join(' ')&&k++<10)sh=shuffle(words);
+  G.sc={full,zh,words,pool:sh.map((w,i)=>({w,id:i})),chosen:[],tries:0,hint:0,fb:'',mark:null};
+  renderSent();
+}
+function renderSent(){
+  const s=G.sc, st=STAGES[G.s];
+  app.innerHTML=topBar(`關卡 ${G.s+1}　合成句子 ${G.idx+1}/${st.sents.length}`)+`<div class="card">
+   <div class="bar"><div style="width:${G.idx/st.sents.length*100}%"></div></div>
+   <div class="msg">🔨 用單字方塊合成句子：<b>${esc(s.zh)}</b></div>
+   <div class="tiles ans">${s.chosen.map((t,i)=>`<button class="tile w ${s.mark?(s.mark[i]?'good':'bad'):''}" onclick="unpickS(${t.id})">${esc(t.w)}</button>`).join('')}</div>
+   <div class="tiles">${s.pool.filter(t=>!s.chosen.find(x=>x.id===t.id)).map(t=>`<button class="tile w" onclick="pickS(${t.id})">${esc(t.w)}</button>`).join('')}</div>
+   <div class="msg">${s.fb}</div>
+   <p style="text-align:center"><button class="btn" onclick="checkS()">✔ 合成！</button> <button class="btn gray" onclick="hintS()">💡 提示</button> <button class="btn gray" onclick="clearS()">↺ 重排</button></p></div>`;
+}
+function pickS(id){const s=G.sc;const t=s.pool.find(x=>x.id===id);if(!s.chosen.find(x=>x.id===id)){s.chosen.push(t);s.mark=null;s.fb='';renderSent();}}
+function unpickS(id){const s=G.sc;s.chosen=s.chosen.filter(x=>x.id!==id);s.mark=null;renderSent();}
+function clearS(){const s=G.sc;s.chosen=[];s.mark=null;s.fb='';renderSent();}
+function hintS(){const s=G.sc;s.hint++;G.hints=(G.hints||0)+1;const n=s.chosen.length;
+  // 若目前已排的前面都對，提示下一個字；否則清掉錯的
+  let ok=0;while(ok<n&&s.chosen[ok].w===s.words[ok])ok++;
+  s.chosen=s.chosen.slice(0,ok); s.mark=null;
+  if(ok<s.words.length){ const nxt=s.pool.find(t=>t.w===s.words[ok]&&!s.chosen.find(x=>x.id===t.id)); s.chosen.push(nxt); }
+  s.fb='💡 幫你放好下一個字了，繼續！'; if(s.chosen.length===s.words.length) return checkS(); renderSent();}
+function checkS(){
+  const s=G.sc; if(s.chosen.length<s.words.length){s.fb='還沒排完喔，單字方塊都要用上！';return renderSent();}
+  const mark=s.chosen.map((t,i)=>t.w===s.words[i]);
+  if(mark.every(Boolean)){
+    G.sres.push({full:s.full,tries:s.tries,hint:s.hint});
+    app.innerHTML=topBar(`關卡 ${G.s+1}`)+`<div class="card" style="text-align:center"><div class="msg">合成成功！🎉</div><div class="big-en">${esc(s.full)}</div><div class="msg">${esc(s.zh)}<br>🔊 聽一聽，然後<b>大聲唸一次</b>給老師聽！</div>
+     <button class="btn blue" onclick="say(${esc(JSON.stringify(s.full))})">🔊 再聽一次</button> <button class="btn" onclick="G.idx++;nextSent()">🗣️ 我唸好了 → 下一個</button></div>`;
+    say(s.full); return;
+  }
+  s.tries++;
+  // 保留最前面連續正確的，其餘放回去
+  let ok=0;while(ok<mark.length&&mark[ok])ok++;
+  s.mark=mark; s.fb=`綠色的位置對了，紅色的再想一想！${s.tries>=2?'（可以按 💡 提示）':''}`;
+  renderSent();
+  setTimeout(()=>{ if(G&&G.sc===s&&s.mark){ s.chosen=s.chosen.slice(0,ok); s.mark=null; renderSent(); } },1400);
+}
+
+/* ---------- 結算 ---------- */
+function report(i){
+  const st=STAGES[i]; let t=`【軒瑀 方塊世界英文礦工 關卡${i+1}：${st.name}】\n`;
+  t+=`挖到 ${st.words.length}/${st.words.length} 個單字，合成 ${G.sres.length}/${st.sents.length} 個句子。\n`;
+  const wl=Object.entries(G.wrongL).filter(([w,n])=>n>=2); if(wl.length){t+='拼字比較卡的字：'+wl.map(([w,n])=>`${w}（錯 ${n} 次）`).join('、')+'\n';} else t+='單字拼寫都很順！\n';
+  const sl=G.sres.filter(r=>r.tries>0||r.hint>0); if(sl.length){t+='句子需要再練：\n'+sl.map((r,k)=>`${k+1}. ${r.full}（排錯 ${r.tries} 次${r.hint?'，提示 '+r.hint+' 次':''}）`).join('\n')+'\n';} else t+='句子都一次排對！\n';
+  t+=`提示共用 ${G.hints||0} 次。`; return t;
+}
+function viewEnd(){
+  const i=G.s; SAVE.done[i]=true; SAVE.log[i]=report(i); save();
+  app.innerHTML=topBar(`關卡 ${i+1} 完成`)+`<div class="card"><h2>🎉 關卡 ${i+1}「${STAGES[i].name}」完成！</h2>
+  <div class="msg">你挖到了 ${STAGES[i].words.map(w=>w[1]).join(' ')}，還合成了 ${STAGES[i].sents.length} 個句子！</div>
+  <div class="msg"><b>給 Qian 的紀錄</b>（按「複製」貼到 Discord）：</div>
+  <textarea class="report" id="rep" readonly>${esc(SAVE.log[i])}</textarea>
+  <p><button class="btn blue" onclick="copyText(document.getElementById('rep').value)">📋 複製紀錄</button>
+  ${i+1<STAGES.length?`<button class="btn" onclick="startStage(${i+1})">▶ 下一關</button>`:''}
+  <button class="btn gray" onclick="startStage(${i})">🔁 再玩一次</button><button class="btn gray" onclick="viewMenu()">回選單</button></p></div>`;
+}
+function viewReport(){
+  let t=Object.keys(SAVE.log).map(Number).sort((a,b)=>a-b).map(k=>SAVE.log[k]).join('\n\n')||'還沒有紀錄，先玩一關吧！'; if(t.length>1900)t=t.slice(-1900);
+  app.innerHTML=topBar()+`<div class="card"><h2>📋 全部紀錄</h2><textarea class="report" id="rep" readonly>${esc(t)}</textarea>
+  <p><button class="btn blue" onclick="copyText(document.getElementById('rep').value)">📋 複製</button><button class="btn gray" onclick="viewMenu()">回選單</button>
+  <button class="btn gray" onclick="if(confirm('確定清除所有進度？')){SAVE={inv:[],done:{},log:{}};save();viewMenu();}">🗑️ 清除存檔（老師用）</button></p></div>`;
+}
+viewMenu();
+</script>
+</body>
+</html>
