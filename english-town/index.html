@@ -162,6 +162,7 @@ const EXTRA=[
  {l:{emoji:'🤤',zh:'你餓了嗎？',full:'Are you hungry?'}, n:{emoji:'👨‍⚕️',zh:'他是醫生嗎？',full:'Is he a doctor?'}}
 ];
 EXTRA.forEach((x,i)=>{ const it=DAYS[i].items; it.splice(3,0,Object.assign({t:'listen'},x.l)); it.splice(it.length-1,0,Object.assign({t:'type'},x.n)); });
+const ORIG=DAYS.map(d=>d.items.slice());
 const STORY=[
  '爺爺留下一輛神祕的「句子餐車」！只有會說英文句子的人，才能讓它發動。今天第一批客人，是住在小屋裡的一家人。',
  '餐車開到動物園了！動物們肚子好餓，可是牠們只聽得懂英文句子。',
@@ -237,6 +238,7 @@ function viewMenu(){
    <div class="msg">你開了一輛「句子餐車」。每一天會來 6 位客人，用英文把他們說的話打出來，就能賺金幣 💰，把餐車裝飾得越來越漂亮！</div>
    <div class="msg">① 先看今天的單字　② 幫 6 位客人打英文句子　③ 每句都要大聲唸一次</div>
    <button class="btn green" onclick="startDay(${nextDay})">▶ ${nextDay in SAVE.done?'再玩':'開始'} Day ${nextDay+1}：${DAYS[nextDay].name}</button>
+   <button class="btn ${SAVE.easy?'green':'gray'}" onclick="SAVE.easy=!SAVE.easy;save();viewMenu()">🌱 輕鬆模式：${SAVE.easy?'開（全部用單字磁鐵排句子）':'關'}</button>
    <button class="btn blue" onclick="viewShop()">🛒 餐車商店</button>
    <button class="btn" onclick="viewAlbum()">📒 客人圖鑑 ${SAVE.stickers.length}/${DAYS.reduce((s,d)=>s+d.items.length,0)}</button>
    <button class="btn gray" onclick="viewAllReport()">📋 全部紀錄</button></div>
@@ -247,6 +249,7 @@ function viewMenu(){
 function startDay(i){
   G={day:i,qi:0,tries:0,hints:0,res:[],order:null,hp:3,combo:0,maxCombo:0};
   const d=DAYS[i];
+  d.items = SAVE.easy ? ORIG[i].filter(q=>q.t!=='free'&&q.t!=='listen').map(q=>({t:'order',emoji:q.emoji,zh:q.zh,full:q.full,alts:q.alts})) : ORIG[i].slice();
   app.innerHTML=topBar(`Day ${i+1} `)+sceneHtml(d.sign)+
   `<div class="card"><h2>${d.emoji} Day ${i+1}：${d.name}</h2>
    <div class="msg">📖 ${esc(STORY[i])}</div>
